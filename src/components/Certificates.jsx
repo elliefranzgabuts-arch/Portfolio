@@ -1,11 +1,23 @@
+import certificate1 from "../assets/images/certificate1.jpeg";
+import certificate2 from "../assets/images/certificate2.jpeg";
+
 function Certificates() {
     const certificates = [
         {
             number: "01",
-            title: "Certificate of Participation",
+            title: "Certificate of Completion",
             description:
-                "A certificate I received from participating in a school seminar. Experiences like these help me learn beyond the classroom and explore different areas of technology.",
-            year: "2026",
+                "A certificate I received in recognition of my contribution as a Challenge Master during CITE 2025: Level Up! The Glitch Tower, held at PHINMA University of Iloilo.",
+            year: "2025",
+            image: certificate1,
+        },
+        {
+            number: "02",
+            title: "Certificate of Appreciation",
+            description:
+                "A certificate received for being part of a team that achieved Top 2 for exceptional website design in ITE 399 - Human Computer Interaction I.",
+            year: "2025",
+            image: certificate2,
         },
     ];
 
@@ -39,8 +51,8 @@ function Certificates() {
 
                         <p className="text-gray-400 text-lg leading-relaxed max-w-lg lg:ml-auto">
                             Certificates and experiences I've gained through
-                            school seminars, activities, and opportunities
-                            to learn outside the classroom.
+                            school activities, events, and opportunities to
+                            learn beyond the classroom.
                         </p>
 
                     </div>
@@ -69,7 +81,7 @@ function Certificates() {
                             "
                         >
 
-                            {/* Red accent */}
+                            {/* Red Accent */}
                             <div
                                 className="
                                     absolute
@@ -86,56 +98,49 @@ function Certificates() {
                                 "
                             />
 
-
-                            {/* Certificate Preview */}
+                            {/* Certificate Image */}
                             <div
                                 className="
                                     relative
-                                    h-72
-                                    md:h-80
                                     rounded-xl
                                     bg-black
                                     border
                                     border-[#242424]
                                     overflow-hidden
-                                    flex
-                                    items-center
-                                    justify-center
                                 "
                             >
-
-                                <div className="text-center">
-
-                                    <p className="text-[#333] text-5xl font-bold">
-                                        {certificate.number}
-                                    </p>
-
-                                    <p className="text-[#444] text-sm mt-3 tracking-[0.2em] uppercase">
-                                        Certificate Preview
-                                    </p>
-
-                                </div>
-
+                                <img
+                                    src={certificate.image}
+                                    alt={certificate.title}
+                                    className="
+                                        w-full
+                                        h-auto
+                                        object-cover
+                                        transition-transform
+                                        duration-500
+                                        group-hover:scale-[1.02]
+                                    "
+                                />
 
                                 {/* Year */}
                                 <div className="absolute top-5 right-5">
                                     <span
                                         className="
                                             border
-                                            border-[#333]
+                                            border-white/20
+                                            bg-black/70
+                                            backdrop-blur-sm
                                             rounded-full
                                             px-3
                                             py-1
                                             text-xs
-                                            text-gray-400
+                                            text-gray-300
                                         "
                                     >
                                         {certificate.year}
                                     </span>
                                 </div>
-
                             </div>
-
 
                             {/* Details */}
                             <div className="px-2 pt-7 pb-3">
@@ -163,7 +168,6 @@ function Certificates() {
 
                                 </div>
 
-
                                 <p className="text-gray-400 leading-relaxed mt-5">
                                     {certificate.description}
                                 </p>
@@ -176,13 +180,13 @@ function Certificates() {
                 </div>
 
 
-                {/* Bottom message */}
+                {/* Bottom Message */}
                 <div className="mt-12 border-t border-[#1f1f1f] pt-6 flex items-center gap-4">
 
                     <span className="w-8 h-px bg-red-500"></span>
 
                     <p className="text-sm text-gray-600">
-                        Every seminar is another opportunity to learn
+                        Every experience is another opportunity to learn
                         something new.
                     </p>
 

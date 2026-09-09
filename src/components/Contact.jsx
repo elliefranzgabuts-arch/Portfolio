@@ -15,7 +15,6 @@ function Contact(props) {
                     </p>
                 </div>
 
-
                 {/* Main Content */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
 
@@ -72,14 +71,12 @@ function Contact(props) {
                         </a>
                     </div>
 
-
                     {/* Right Side */}
                     <div className="lg:border-l lg:border-gray-800 lg:pl-16">
 
                         <p className="text-sm font-semibold tracking-[0.2em] text-gray-500 uppercase mb-8">
                             Get in touch
                         </p>
-
 
                         {/* Email */}
                         <a
@@ -121,7 +118,6 @@ function Contact(props) {
                             </div>
                         </a>
 
-
                         {/* Phone */}
                         <a
                             href={`tel:${props.phone}`}
@@ -162,7 +158,6 @@ function Contact(props) {
                             </div>
                         </a>
 
-
                         {/* Location */}
                         <div className="py-6 border-b border-gray-800">
                             <p className="text-sm text-gray-500 mb-2">
@@ -173,7 +168,6 @@ function Contact(props) {
                                 Iloilo City, Philippines
                             </p>
                         </div>
-
 
                         {/* Socials */}
                         <div className="mt-10">
@@ -186,6 +180,9 @@ function Contact(props) {
                                 {/* Facebook */}
                                 <a
                                     href="https://www.facebook.com/share/1DKUnE2q3L/"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label="Facebook"
                                     className="
                                         w-11
                                         h-11
@@ -213,12 +210,12 @@ function Contact(props) {
                                     </svg>
                                 </a>
 
-
                                 {/* GitHub */}
                                 <a
                                     href="https://github.com/elliefranzgabuts-arch"
                                     target="_blank"
                                     rel="noreferrer"
+                                    aria-label="GitHub"
                                     className="
                                         w-11
                                         h-11
@@ -246,10 +243,12 @@ function Contact(props) {
                                     </svg>
                                 </a>
 
-
                                 {/* LinkedIn */}
                                 <a
                                     href="https://www.linkedin.com/in/ellie-franz-gabutin-9881783b3"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label="LinkedIn"
                                     className="
                                         w-11
                                         h-11

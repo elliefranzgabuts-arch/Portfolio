@@ -1,3 +1,5 @@
+import aboutMe from "../assets/images/aboutme.jpeg";
+
 function Home() {
     return (
         <section
@@ -11,6 +13,7 @@ function Home() {
                     {/* LEFT SIDE */}
                     <div>
 
+                        {/* Section Label */}
                         <div className="flex items-center gap-4 mb-8">
                             <span className="w-10 h-px bg-red-500"></span>
 
@@ -20,6 +23,7 @@ function Home() {
                         </div>
 
 
+                        {/* Name */}
                         <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-[0.9] tracking-tight">
                             Ellie
                             <br />
@@ -29,6 +33,7 @@ function Home() {
                         </h1>
 
 
+                        {/* Introduction */}
                         <p className="text-gray-400 text-lg md:text-xl leading-relaxed max-w-xl mt-10">
                             I'm a 3rd-year BSIT student learning web
                             development and building projects along the way.
@@ -37,6 +42,7 @@ function Home() {
                         </p>
 
 
+                        {/* Tagline */}
                         <p className="text-gray-600 mt-5 text-sm tracking-wide">
                             Still learning. Still building.
                         </p>
@@ -45,6 +51,7 @@ function Home() {
                         {/* BUTTONS */}
                         <div className="flex flex-wrap gap-4 mt-10">
 
+                            {/* View Projects */}
                             <a
                                 href="#projects"
                                 className="
@@ -82,6 +89,7 @@ function Home() {
                             </a>
 
 
+                            {/* Contact Me */}
                             <a
                                 href="#contact"
                                 className="
@@ -143,10 +151,12 @@ function Home() {
                                 border-gray-800
                                 rounded-2xl
                                 p-3
+                                bg-gray-950
                                 transition-all
                                 duration-500
                                 hover:-translate-y-2
                                 hover:border-red-500/60
+                                hover:shadow-[0_0_30px_rgba(239,68,68,0.12)]
                             "
                         >
 
@@ -157,17 +167,23 @@ function Home() {
                                     h-full
                                     rounded-xl
                                     overflow-hidden
-                                    bg-gray-950
+                                    bg-black
                                 "
                             >
 
-                                {/* Replace this with your image */}
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-gray-700 text-sm">
-                                        Your Photo
-                                    </span>
-                                </div>
-
+                                {/* Profile Image */}
+                                <img
+                                    src={aboutMe}
+                                    alt="Ellie"
+                                    className="
+                                        w-full
+                                        h-full
+                                        object-cover
+                                        transition-transform
+                                        duration-500
+                                        hover:scale-105
+                                    "
+                                />
 
                                 {/* Bottom Label */}
                                 <div
@@ -194,7 +210,6 @@ function Home() {
                                 </div>
 
                             </div>
-
                         </div>
 
 

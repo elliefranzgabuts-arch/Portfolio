@@ -8,7 +8,9 @@ import Projects from "./components/Projects";
 import Journey from "./components/Journey";
 import Certificates from "./components/Certificates";
 import Contact from "./components/Contact";
-import Section from "./components/Section";
+import Section from "./components/Footer";
+import TailwindPractice from "./practice/TailwindPractice";
+
 
 function App() {
 
@@ -24,6 +26,8 @@ function App() {
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}
             />
+
+            <TailwindPractice />
 
             <Home />
 

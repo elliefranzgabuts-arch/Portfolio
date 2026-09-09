@@ -1,4 +1,4 @@
-function About(props) {
+function About({ name }) {
     return (
         <section
             id="about"
@@ -21,7 +21,6 @@ function About(props) {
 
                     {/* LEFT */}
                     <div>
-
                         <p className="text-[#555] text-sm tracking-[0.3em] uppercase mb-5">
                             A little bit about
                         </p>
@@ -35,14 +34,12 @@ function About(props) {
                             </span>
                         </h1>
 
-
                         <div className="mt-10 border-l border-red-500 pl-6">
                             <p className="text-[#a3a3a3] text-lg leading-relaxed max-w-md">
                                 A student, a learner, and someone who enjoys
-                                building things with technology.
+                                building things with technology
                             </p>
                         </div>
-
                     </div>
 
 
@@ -52,7 +49,7 @@ function About(props) {
                         <p>
                             I'm{" "}
                             <span className="text-white font-medium">
-                                {props.name}
+                                {name}
                             </span>
                             , a 3rd-year BSIT student at PHINMA University
                             of Iloilo with a passion for web development
@@ -60,29 +57,29 @@ function About(props) {
                         </p>
 
                         <p>
-                            I'm currently learning frontend development
-                            using HTML, CSS, JavaScript, and Tailwind CSS.
-                            I'm also exploring backend development with
-                            Python, Flask, and FastAPI. Along the way, I'm
-                            learning tools like Git, GitHub, Figma, VS Code,
-                            and MySQL.
+                            I'm currently learning frontend development using
+                            HTML, CSS, JavaScript, and Tailwind CSS. I'm now
+                            studying the fundamentals of React.js while
+                            continuing to improve my understanding of modern
+                            frontend development. I'm also exploring backend
+                            development with Python, Flask, and FastAPI.
+                            Along the way, I'm learning tools like Git,
+                            GitHub, Figma, VS Code, and MySQL.
                         </p>
 
                         <p>
-                            I started this journey from scratch, and I'm
-                            still learning every day. I may not know
-                            everything yet, but I'm doing my best to
-                            improve, build projects, and find my way toward
-                            the future I want.
+                            I started this journey from scratch, and I'm still
+                            learning every day. I may not know everything yet,
+                            but I'm doing my best to improve, build projects,
+                            and find my way toward the future I want.
                         </p>
 
                         <p>
-                            I have a dream, and I'm willing to work for it —
+                            I have a dream, and I'm willing to work for it -
                             one project, one lesson, and one step at a time.
                         </p>
 
                     </div>
-
                 </div>
 
 

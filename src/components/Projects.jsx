@@ -1,5 +1,7 @@
+import ourLittleWorld from "../assets/images/our-little-world.png";
+
 function Projects() {
-    const projects = [
+    const personalProjects = [
         {
             number: "01",
             type: "Personal Project",
@@ -16,8 +18,249 @@ function Projects() {
             ],
             github:
                 "https://github.com/elliefranzgabuts-arch/our-little-world",
+            image: ourLittleWorld,
         },
     ];
+
+    const contributions = [
+        // Add your collaborative projects here.
+        //
+        // Example:
+        // {
+        //     number: "01",
+        //     type: "Team Project",
+        //     title: "Project Name",
+        //     description:
+        //         "Description of the project and what I contributed.",
+        //     role: "Frontend Developer",
+        //     technologies: [
+        //         "React",
+        //         "Tailwind CSS",
+        //     ],
+        //     github: "https://github.com/...",
+        //     image: projectImage,
+        // },
+    ];
+
+    const ProjectCard = ({ project }) => {
+        return (
+            <article
+                className="
+                    group
+                    relative
+                    border
+                    border-[#242424]
+                    rounded-2xl
+                    bg-[#080808]
+                    overflow-hidden
+                    transition-all
+                    duration-500
+                    hover:-translate-y-2
+                    hover:border-red-500/70
+                "
+            >
+                {/* Red Side Accent */}
+                <div
+                    className="
+                        absolute
+                        left-0
+                        top-0
+                        bottom-0
+                        w-px
+                        bg-red-500
+                        origin-top
+                        scale-y-0
+                        transition-transform
+                        duration-500
+                        group-hover:scale-y-100
+                    "
+                />
+
+                <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr]">
+                    {/* Project Preview */}
+                    <div className="p-6 md:p-8">
+                        <div
+                            className="
+                                relative
+                                h-72
+                                md:h-96
+                                rounded-xl
+                                bg-black
+                                border
+                                border-[#242424]
+                                overflow-hidden
+                            "
+                        >
+                            {project.image ? (
+                                <img
+                                    src={project.image}
+                                    alt={`${project.title} preview`}
+                                    className="
+                                        w-full
+                                        h-full
+                                        object-cover
+                                        transition-transform
+                                        duration-500
+                                        group-hover:scale-105
+                                    "
+                                />
+                            ) : (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span className="text-[#333] text-sm tracking-widest uppercase">
+                                        Project Preview
+                                    </span>
+
+                                    <span className="text-[#222] text-xs mt-2">
+                                        {project.title}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Dark Overlay */}
+                            <div
+                                className="
+                                    absolute
+                                    inset-0
+                                    bg-black/10
+                                    group-hover:bg-transparent
+                                    transition-all
+                                    duration-500
+                                "
+                            />
+
+                            {/* Project Number */}
+                            <span
+                                className="
+                                    absolute
+                                    top-5
+                                    left-5
+                                    text-red-500
+                                    text-xs
+                                    font-semibold
+                                    tracking-[0.2em]
+                                    bg-black/70
+                                    px-2
+                                    py-1
+                                    rounded
+                                "
+                            >
+                                {project.number}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Project Information */}
+                    <div
+                        className="
+                            p-6
+                            md:p-8
+                            lg:py-10
+                            lg:pr-10
+                            flex
+                            flex-col
+                            justify-center
+                        "
+                    >
+                        {/* Project Type */}
+                        <p className="text-red-500 text-xs font-semibold tracking-[0.25em] uppercase">
+                            {project.type}
+                        </p>
+
+                        {/* Title */}
+                        <h2 className="text-3xl md:text-4xl font-bold mt-4">
+                            {project.title}
+                            <span className="text-red-500">.</span>
+                        </h2>
+
+                        {/* Description */}
+                        <p className="text-gray-400 text-base leading-relaxed mt-5 max-w-xl">
+                            {project.description}
+                        </p>
+
+                        {/* Role */}
+                        {project.role && (
+                            <div className="mt-6">
+                                <p className="text-gray-600 text-xs uppercase tracking-[0.2em]">
+                                    My Role
+                                </p>
+
+                                <p className="text-gray-300 mt-2 font-medium">
+                                    {project.role}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Technologies */}
+                        <div className="flex flex-wrap gap-2 mt-7">
+                            {project.technologies.map((technology) => (
+                                <span
+                                    key={technology}
+                                    className="
+                                        px-3
+                                        py-1.5
+                                        text-xs
+                                        text-gray-400
+                                        border
+                                        border-[#242424]
+                                        rounded-md
+                                        bg-[#0d0d0d]
+                                    "
+                                >
+                                    {technology}
+                                </span>
+                            ))}
+                        </div>
+
+                        {/* GitHub */}
+                        {project.github && (
+                            <div className="mt-8">
+                                <a
+                                    href={project.github}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="
+                                        inline-flex
+                                        items-center
+                                        gap-3
+                                        text-white
+                                        font-semibold
+                                        group/link
+                                    "
+                                >
+                                    <span
+                                        className="
+                                            border
+                                            border-red-500
+                                            rounded-lg
+                                            px-5
+                                            py-3
+                                            transition-all
+                                            duration-300
+                                            group-hover/link:bg-red-500
+                                        "
+                                    >
+                                        View Project
+                                    </span>
+
+                                    <span
+                                        className="
+                                            text-red-500
+                                            text-xl
+                                            transition-transform
+                                            duration-300
+                                            group-hover/link:translate-x-1
+                                        "
+                                    >
+                                        →
+                                    </span>
+                                </a>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </article>
+        );
+    };
 
     return (
         <section
@@ -28,7 +271,6 @@ function Projects() {
 
                 {/* Header */}
                 <div className="mb-16">
-
                     <div className="flex items-center gap-4 mb-6">
                         <span className="w-10 h-px bg-red-500"></span>
 
@@ -38,7 +280,6 @@ function Projects() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
-
                         <h1 className="text-6xl md:text-7xl font-bold leading-[0.9] tracking-tight">
                             Things
                             <br />
@@ -52,221 +293,79 @@ function Projects() {
                             learning, experimenting, and improving my skills
                             as a developer.
                         </p>
+                    </div>
+                </div>
 
+                {/* PERSONAL PROJECTS */}
+                <div>
+                    <div className="flex items-center gap-4 mb-8">
+                        <span className="text-red-500 text-sm font-semibold tracking-[0.2em]">
+                            01
+                        </span>
+
+                        <h2 className="text-2xl font-bold">
+                            Personal Projects
+                        </h2>
+
+                        <span className="h-px bg-[#242424] flex-1"></span>
                     </div>
 
+                    <div className="space-y-6">
+                        {personalProjects.map((project) => (
+                            <ProjectCard
+                                key={project.title}
+                                project={project}
+                            />
+                        ))}
+                    </div>
                 </div>
 
+                {/* CONTRIBUTIONS */}
+                <div className="mt-24">
+                    <div className="flex items-center gap-4 mb-8">
+                        <span className="text-red-500 text-sm font-semibold tracking-[0.2em]">
+                            02
+                        </span>
 
-                {/* Projects */}
-                <div className="space-y-8">
+                        <h2 className="text-2xl font-bold">
+                            Contributions
+                        </h2>
 
-                    {projects.map((project) => (
-                        <article
-                            key={project.title}
+                        <span className="h-px bg-[#242424] flex-1"></span>
+                    </div>
+
+                    {contributions.length > 0 ? (
+                        <div className="space-y-6">
+                            {contributions.map((project) => (
+                                <ProjectCard
+                                    key={project.title}
+                                    project={project}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div
                             className="
-                                group
-                                relative
                                 border
+                                border-dashed
                                 border-[#242424]
                                 rounded-2xl
-                                bg-[#080808]
-                                overflow-hidden
-                                transition-all
-                                duration-500
-                                hover:-translate-y-2
-                                hover:border-red-500/70
+                                p-10
+                                md:p-14
+                                text-center
                             "
                         >
-
-                            {/* Red side accent */}
-                            <div
-                                className="
-                                    absolute
-                                    left-0
-                                    top-0
-                                    bottom-0
-                                    w-1
-                                    bg-red-500
-                                    scale-y-0
-                                    origin-bottom
-                                    transition-transform
-                                    duration-500
-                                    group-hover:scale-y-100
-                                "
-                            />
-
-                            <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr]">
-
-                                {/* Project Preview */}
-                                <div className="p-4 md:p-6">
-
-                                    <div
-                                        className="
-                                            relative
-                                            h-72
-                                            md:h-96
-                                            rounded-xl
-                                            bg-black
-                                            border
-                                            border-[#242424]
-                                            overflow-hidden
-                                        "
-                                    >
-
-                                        {/* Replace this with actual project image */}
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-
-                                            <span className="text-[#333] text-sm tracking-widest uppercase">
-                                                Project Preview
-                                            </span>
-
-                                            <span className="text-[#222] text-xs mt-2">
-                                                Our Little World
-                                            </span>
-
-                                        </div>
-
-
-                                        {/* Preview number */}
-                                        <div className="absolute top-5 left-5">
-                                            <span className="text-white text-sm font-semibold tracking-widest">
-                                                {project.number}
-                                            </span>
-                                        </div>
-
-
-                                        {/* Bottom label */}
-                                        <div
-                                            className="
-                                                absolute
-                                                bottom-0
-                                                left-0
-                                                right-0
-                                                bg-black/90
-                                                border-t
-                                                border-[#242424]
-                                                px-5
-                                                py-4
-                                            "
-                                        >
-                                            <p className="text-red-500 text-xs font-semibold uppercase tracking-[0.2em]">
-                                                {project.type}
-                                            </p>
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-
-                                {/* Project Details */}
-                                <div className="p-8 md:p-10 flex flex-col justify-center">
-
-                                    <p className="text-red-500 text-sm font-semibold tracking-[0.2em] uppercase mb-5">
-                                        {project.number} / {project.type}
-                                    </p>
-
-                                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-                                        {project.title}
-                                        <span className="text-red-500">.</span>
-                                    </h2>
-
-                                    <p className="text-gray-400 leading-relaxed text-lg mt-6">
-                                        {project.description}
-                                    </p>
-
-
-                                    {/* Technologies */}
-                                    <div className="mt-8">
-
-                                        <p className="text-white text-sm font-semibold mb-4">
-                                            Built with
-                                        </p>
-
-                                        <div className="flex flex-wrap gap-2">
-
-                                            {project.technologies.map(
-                                                (technology) => (
-                                                    <span
-                                                        key={technology}
-                                                        className="
-                                                            border
-                                                            border-[#333]
-                                                            rounded-md
-                                                            px-3
-                                                            py-1.5
-                                                            text-sm
-                                                            text-gray-400
-                                                            transition-colors
-                                                            duration-300
-                                                            hover:border-red-500
-                                                            hover:text-white
-                                                        "
-                                                    >
-                                                        {technology}
-                                                    </span>
-                                                )
-                                            )}
-
-                                        </div>
-
-                                    </div>
-
-
-                                    {/* GitHub */}
-                                    <div className="mt-10">
-
-                                        <a
-                                            href={project.github}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="
-                                                inline-flex
-                                                items-center
-                                                gap-3
-                                                text-white
-                                                font-semibold
-                                                group/link
-                                            "
-                                        >
-
-                                            <span
-                                                className="
-                                                    border
-                                                    border-red-500
-                                                    rounded-lg
-                                                    px-5
-                                                    py-3
-                                                    transition-all
-                                                    duration-300
-                                                    group-hover/link:bg-red-500
-                                                "
-                                            >
-                                                View Project
-                                            </span>
-
-                                            <span className="text-red-500 text-xl transition-transform duration-300 group-hover/link:translate-x-1">
-                                                →
-                                            </span>
-
-                                        </a>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </article>
-                    ))}
-
+                            <p className="text-gray-600 text-sm tracking-wide">
+                                Collaborative projects and contributions
+                                will appear here.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
-
-                {/* Bottom note */}
+                {/* Bottom Statement */}
                 <div className="mt-12 flex items-center gap-4">
-                    <span className="w-8 h-px bg-[#333]"></span>
+                    <span className="w-8 h-px bg-red-500"></span>
 
                     <p className="text-sm text-gray-600">
                         More projects coming as I continue learning and

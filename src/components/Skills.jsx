@@ -3,7 +3,7 @@ function Skills() {
         {
             number: "01",
             title: "Frontend",
-            description: "Building and designing interfaces for the web.",
+            description: "Building and designing interfaces for the web",
             skills: [
                 "HTML",
                 "CSS",
@@ -15,7 +15,7 @@ function Skills() {
         {
             number: "02",
             title: "Backend",
-            description: "Exploring how applications work behind the interface.",
+            description: "Exploring how applications work behind the interface",
             skills: [
                 "Python",
                 "Flask",
@@ -25,7 +25,7 @@ function Skills() {
         {
             number: "03",
             title: "Tools & Database",
-            description: "Tools I use while developing and managing projects.",
+            description: "Tools I use while developing and managing projects",
             skills: [
                 "MySQL",
                 "Git",
@@ -60,14 +60,14 @@ function Skills() {
                             What I
                             <br />
                             <span className="text-red-500">
-                                Work With.
+                                Work With
                             </span>
                         </h1>
 
                         <p className="text-gray-400 text-lg leading-relaxed max-w-lg lg:ml-auto">
                             Technologies and tools I've been learning and
                             using while building projects as a student
-                            developer.
+                            developer
                         </p>
 
                     </div>
@@ -190,7 +190,7 @@ function Skills() {
                     <span className="w-8 h-px bg-red-500"></span>
 
                     <p className="text-sm text-gray-600">
-                        I'm still learning, and this list will keep growing.
+                        I'm still learning, and this list will keep growing
                     </p>
 
                 </div>
