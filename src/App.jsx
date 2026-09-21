@@ -8,16 +8,39 @@ import Projects from "./components/Projects";
 import Journey from "./components/Journey";
 import Certificates from "./components/Certificates";
 import Contact from "./components/Contact";
-import Section from "./components/Footer";
-import TailwindPractice from "./practice/TailwindPractice";
-
 
 function App() {
-
     const [activeSection, setActiveSection] = useState("home");
 
     useEffect(() => {
         document.title = "Ellie Franz | Portfolio";
+    }, []);
+
+    useEffect(() => {
+        const sections = document.querySelectorAll("section[id]");
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        setActiveSection(entry.target.id);
+                    }
+                });
+            },
+            {
+                threshold: 0.3,
+            }
+        );
+
+        sections.forEach((section) => {
+            observer.observe(section);
+        });
+
+        return () => {
+            sections.forEach((section) => {
+                observer.unobserve(section);
+            });
+        };
     }, []);
 
     return (
@@ -27,8 +50,6 @@ function App() {
                 setActiveSection={setActiveSection}
             />
 
-            <TailwindPractice />
-
             <Home />
 
             <About name="Ellie Franz" />
@@ -37,13 +58,9 @@ function App() {
                 skills={["HTML", "CSS", "JavaScript", "React"]}
             />
 
-            <Projects
-                project="Our Little World"
-            />
+            <Projects project="Our Little World" />
 
-            <Journey
-                experience="an IT student"
-            />
+            <Journey experience="an IT student" />
 
             <Certificates
                 certificate1="..."
@@ -54,10 +71,6 @@ function App() {
                 email="elliefranzm.gabutin@gmail.com"
                 phone="09953216734"
             />
-
-            <Section title="Test Section">
-                <p>Hello from children!</p>
-            </Section>
         </>
     );
 }

@@ -1,205 +1,364 @@
+import { useEffect, useRef, useState } from "react";
+
 function Journey() {
+    const [isVisible, setIsVisible] = useState(false);
+    const journeyRef = useRef(null);
+
     const journey = [
         {
             number: "01",
-            title: "Started From Scratch",
+            year: "2024–2025",
+            title: "Started With Python",
+            tag: "FIRST YEAR",
             description:
-                "I started my journey in IT with curiosity and a lot of things I didn't know yet. I slowly began learning how websites and applications work.",
+                "My journey in IT started during my first year of college at PHINMA University of Iloilo. I was introduced to Python and learned the fundamentals of programming. For our final project, I worked on a 2D story-based project with a horror-style concept.",
         },
         {
             number: "02",
-            title: "Learning Web Development",
+            year: "2025–2026",
+            title: "HTML & CSS",
+            tag: "SECOND YEAR · FIRST SEMESTER",
             description:
-                "As I continued studying, I started exploring HTML, CSS, JavaScript, and other technologies while creating small projects along the way.",
+                "During the first semester of my second year, I was introduced to web development through HTML and CSS. This was one of my first experiences creating and styling websites.",
         },
         {
             number: "03",
-            title: "Exploring More",
+            year: "2025–2026",
+            title: "Learning Java",
+            tag: "SECOND YEAR",
             description:
-                "I started exploring backend development, databases, Git, GitHub, and different tools that helped me understand how real applications are built.",
+                "I continued developing my programming foundation through Java. Working on different projects helped me understand programming concepts and gave me more experience writing and organizing code.",
         },
         {
             number: "04",
-            title: "Learning Beyond The Classroom",
+            year: "2025–2026",
+            title: "Mobile, Arduino & APIs",
+            tag: "SECOND YEAR · SECOND SEMESTER",
             description:
-                "I sometimes join seminars and school activities where I get to learn about different topics, meet new people, and gain experiences outside regular classes.",
+                "I was introduced to mobile application development using Expo Go while also gaining experience with Arduino and APIs. I was still learning these technologies, but the experience allowed me to explore different areas of technology and contribute to our projects.",
         },
         {
             number: "05",
-            title: "Still Learning. Still Building.",
+            year: "DURING COLLEGE",
+            title: "Seminars & Certifications",
+            tag: "LEARNING OUTSIDE CLASS",
             description:
-                "Right now, I'm continuing to improve my skills, learn React, build projects, and prepare myself for the future I want in the technology industry.",
+                "Throughout college, I also participated in seminars and learning activities that helped me gain knowledge beyond regular classroom lessons. These experiences and certifications became part of my continuous learning as an IT student.",
+        },
+        {
+            number: "06",
+            year: "2026–2027",
+            title: "Web Development",
+            tag: "THIRD YEAR",
+            description:
+                "Now in my third year, I started focusing more on web development. I'm learning HTML, CSS, JavaScript, Tailwind CSS, React, Node.js, Express.js, SQL/MySQL, Git, and GitHub while building projects and understanding how different parts of an application work together.",
+        },
+        {
+            number: "07",
+            year: "2026–2027",
+            title: "Philippine Startup Challenge XI",
+            tag: "DICT · UI/UX",
+            description:
+                "I participated in the Philippine Startup Challenge XI as part of my team's UI/UX role. This gave me an opportunity to apply what I've been learning in design and technology while working with a team to develop a startup solution.",
+        },
+        {
+            number: "08",
+            year: "2026–2027",
+            title: "Currently Building",
+            tag: "PRESENT",
+            description:
+                "I'm currently building my own personal website and the Our Little World project. I'm also documenting my progress as an IT student and developer while continuing to learn, experiment, and build.",
         },
     ];
 
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
+                }
+            },
+            {
+                threshold: 0.15,
+            }
+        );
+
+        if (journeyRef.current) {
+            observer.observe(journeyRef.current);
+        }
+
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
+
     return (
         <section
+            ref={journeyRef}
             id="journey"
-            className="bg-black text-white px-6 md:px-10 py-28"
+            className="bg-black text-white px-6 md:px-10 py-28 scroll-mt-24 overflow-hidden"
         >
             <div className="max-w-6xl mx-auto">
 
                 {/* Header */}
-                <div className="mb-20">
-
+                <div
+                    className={`
+                        mb-20
+                        transition-all
+                        duration-700
+                        ${
+                            isVisible
+                                ? "opacity-100 translate-y-0"
+                                : "opacity-0 translate-y-10"
+                        }
+                    `}
+                >
                     <div className="flex items-center gap-4 mb-6">
                         <span className="w-10 h-px bg-red-500"></span>
 
                         <p className="text-sm font-semibold tracking-[0.3em] text-red-500 uppercase">
-                            My Journey
+                            Journey
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
 
-                        <h1 className="text-6xl md:text-7xl font-bold leading-[0.9] tracking-tight">
-                            How I
+                        <h1 className="text-6xl md:text-7xl font-bold leading-[0.85] tracking-tight uppercase">
+                            The Road
                             <br />
                             <span className="text-red-500">
-                                Got Here.
+                                So Far.
                             </span>
                         </h1>
 
                         <p className="text-gray-400 text-lg leading-relaxed max-w-lg lg:ml-auto">
-                            My journey in technology is still in progress.
-                            These are some of the steps that brought me to
-                            where I am today.
+                            The technologies, experiences, and projects that
+                            shaped how I approach development today.
                         </p>
 
                     </div>
-
                 </div>
 
 
-                {/* Timeline */}
-                <div className="relative">
+                {/* Journey Entries */}
+                <div className="space-y-5">
 
-                    {/* Timeline Line */}
-                    <div className="absolute left-[19px] top-0 bottom-0 w-px bg-[#242424] md:left-1/2 md:-translate-x-1/2"></div>
+                    {journey.map((item, index) => (
+                        <article
+                            key={item.number}
+                            className={`
+                                group
+                                relative
+                                border
+                                border-[#242424]
+                                rounded-2xl
+                                bg-[#080808]
+                                overflow-hidden
+                                transition-all
+                                duration-700
+                                hover:-translate-y-1
+                                hover:border-red-500/70
+                                ${
+                                    isVisible
+                                        ? "opacity-100 translate-y-0"
+                                        : "opacity-0 translate-y-12"
+                                }
+                            `}
+                            style={{
+                                transitionDelay: `${200 + index * 100}ms`,
+                            }}
+                        >
 
-
-                    <div className="space-y-12">
-
-                        {journey.map((item, index) => (
+                            {/* Red accent */}
                             <div
-                                key={item.number}
-                                className={`
-                                    relative
-                                    grid
-                                    grid-cols-[40px_1fr]
-                                    md:grid-cols-2
-                                    gap-6
-                                    md:gap-16
-                                    items-start
-                                `}
-                            >
+                                className="
+                                    absolute
+                                    left-0
+                                    top-0
+                                    bottom-0
+                                    w-px
+                                    bg-red-500
+                                    scale-y-0
+                                    origin-top
+                                    transition-transform
+                                    duration-500
+                                    group-hover:scale-y-100
+                                "
+                            />
 
-                                {/* Mobile Number */}
-                                <div className="relative z-10 md:hidden">
+                            <div className="p-6 md:p-8 lg:p-10">
 
-                                    <div className="w-10 h-10 rounded-full bg-black border border-red-500 flex items-center justify-center">
-                                        <span className="text-red-500 text-xs font-semibold">
-                                            {item.number}
-                                        </span>
+                                {/* Top row */}
+                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+
+                                    <div className="flex items-start gap-5 md:gap-7">
+
+                                        {/* Number */}
+                                        <div className="shrink-0">
+
+                                            <span
+                                                className="
+                                                    text-red-500
+                                                    text-sm
+                                                    font-semibold
+                                                    tracking-[0.2em]
+                                                "
+                                            >
+                                                {item.number}
+                                            </span>
+
+                                            <div
+                                                className="
+                                                    text-[#202020]
+                                                    text-4xl
+                                                    md:text-5xl
+                                                    font-bold
+                                                    leading-none
+                                                    mt-2
+                                                    transition-colors
+                                                    duration-300
+                                                    group-hover:text-[#303030]
+                                                "
+                                            >
+                                                {item.number}
+                                            </div>
+
+                                        </div>
+
+
+                                        {/* Main information */}
+                                        <div>
+
+                                            <p
+                                                className="
+                                                    text-red-500
+                                                    text-xs
+                                                    font-semibold
+                                                    tracking-[0.2em]
+                                                    uppercase
+                                                "
+                                            >
+                                                {item.tag}
+                                            </p>
+
+                                            <h2
+                                                className="
+                                                    text-2xl
+                                                    md:text-4xl
+                                                    font-bold
+                                                    mt-2
+                                                    tracking-tight
+                                                    transition-transform
+                                                    duration-300
+                                                    group-hover:translate-x-1
+                                                "
+                                            >
+                                                {item.title}
+                                                <span className="text-red-500">
+                                                    .
+                                                </span>
+                                            </h2>
+
+                                        </div>
+
                                     </div>
 
-                                </div>
 
+                                    {/* Year */}
+                                    <div className="md:text-right md:pl-6">
 
-                                {/* Left Side */}
-                                <div
-                                    className={`
-                                        hidden
-                                        md:block
-                                        ${
-                                            index % 2 === 0
-                                                ? "text-right"
-                                                : "md:order-2"
-                                        }
-                                    `}
-                                >
-
-                                    <p className="text-red-500 text-sm font-semibold tracking-[0.2em] uppercase">
-                                        Step {item.number}
-                                    </p>
-
-                                    <h2 className="text-2xl lg:text-3xl font-bold mt-3">
-                                        {item.title}
-                                        <span className="text-red-500">
-                                            .
-                                        </span>
-                                    </h2>
-
-                                </div>
-
-
-                                {/* Timeline Point */}
-                                <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 z-10 w-4 h-4 rounded-full bg-black border-2 border-red-500 items-center justify-center">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                </div>
-
-
-                                {/* Content */}
-                                <div
-                                    className={`
-                                        border
-                                        border-[#242424]
-                                        rounded-xl
-                                        bg-[#080808]
-                                        p-6
-                                        md:p-7
-                                        transition-all
-                                        duration-300
-                                        hover:-translate-y-1
-                                        hover:border-red-500/60
-                                        ${
-                                            index % 2 === 0
-                                                ? ""
-                                                : "md:order-1"
-                                        }
-                                    `}
-                                >
-
-                                    {/* Mobile Title */}
-                                    <div className="md:hidden mb-4">
-
-                                        <p className="text-red-500 text-xs font-semibold tracking-[0.2em] uppercase">
-                                            Step {item.number}
+                                        <p className="text-xs text-gray-600 tracking-[0.2em] uppercase">
+                                            Timeline
                                         </p>
 
-                                        <h2 className="text-2xl font-bold mt-2">
-                                            {item.title}
-                                            <span className="text-red-500">
-                                                .
-                                            </span>
-                                        </h2>
+                                        <p
+                                            className="
+                                                text-xl
+                                                md:text-2xl
+                                                font-semibold
+                                                text-gray-300
+                                                mt-1
+                                                transition-colors
+                                                duration-300
+                                                group-hover:text-white
+                                            "
+                                        >
+                                            {item.year}
+                                        </p>
 
                                     </div>
 
+                                </div>
 
-                                    <p className="text-gray-400 leading-relaxed">
+
+                                {/* Divider */}
+                                <div className="h-px bg-[#242424] my-7 group-hover:bg-[#333] transition-colors duration-300" />
+
+
+                                {/* Description */}
+                                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-end">
+
+                                    <p className="text-gray-400 leading-relaxed max-w-3xl">
                                         {item.description}
                                     </p>
+
+                                    <div
+                                        className="
+                                            hidden
+                                            md:flex
+                                            items-center
+                                            justify-center
+                                            w-10
+                                            h-10
+                                            rounded-full
+                                            border
+                                            border-[#292929]
+                                            text-gray-600
+                                            transition-all
+                                            duration-300
+                                            group-hover:border-red-500
+                                            group-hover:text-red-500
+                                            group-hover:translate-x-1
+                                        "
+                                    >
+                                        →
+                                    </div>
 
                                 </div>
 
                             </div>
-                        ))}
 
-                    </div>
+                        </article>
+                    ))}
 
                 </div>
 
 
-                {/* Bottom Statement */}
-                <div className="mt-20 border-t border-[#242424] pt-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                {/* Bottom statement */}
+                <div
+                    className={`
+                        mt-14
+                        flex
+                        items-center
+                        gap-4
+                        transition-all
+                        duration-700
+                        ${
+                            isVisible
+                                ? "opacity-100 translate-y-0"
+                                : "opacity-0 translate-y-8"
+                        }
+                    `}
+                    style={{
+                        transitionDelay: "1200ms",
+                    }}
+                >
 
-                    <p className="text-gray-500">
-                        The journey isn't finished yet.
-                    </p>
+                    <span className="w-8 h-px bg-red-500"></span>
 
-                    <p className="text-red-500 font-semibold">
-                        I'm just getting started.
+                    <p className="text-sm text-gray-600">
+                        Still learning. Still building. Still moving forward.
                     </p>
 
                 </div>

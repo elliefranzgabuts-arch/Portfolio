@@ -1,9 +1,15 @@
+import { useEffect, useRef, useState } from "react";
+
 function Skills() {
+    const [isVisible, setIsVisible] = useState(false);
+    const skillsRef = useRef(null);
+
     const skillGroups = [
         {
             number: "01",
             title: "Frontend",
-            description: "Building and designing interfaces for the web",
+            description:
+                "Technologies I use to build and design interfaces for the web.",
             skills: [
                 "HTML",
                 "CSS",
@@ -15,17 +21,20 @@ function Skills() {
         {
             number: "02",
             title: "Backend",
-            description: "Exploring how applications work behind the interface",
+            description:
+                "Technologies I'm exploring to understand how applications work behind the interface.",
             skills: [
+                "Node.js",
+                "Express.js",
                 "Python",
                 "Flask",
-                "FastAPI",
             ],
         },
         {
             number: "03",
             title: "Tools & Database",
-            description: "Tools I use while developing and managing projects",
+            description:
+                "Tools I use for development, version control, design, and data management.",
             skills: [
                 "MySQL",
                 "Git",
@@ -36,16 +45,49 @@ function Skills() {
         },
     ];
 
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
+                }
+            },
+            {
+                threshold: 0.2,
+            }
+        );
+
+        if (skillsRef.current) {
+            observer.observe(skillsRef.current);
+        }
+
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
+
     return (
         <section
+            ref={skillsRef}
             id="skills"
-            className="bg-black text-white px-6 md:px-10 py-28"
+            className="bg-black text-white px-6 md:px-10 py-28 scroll-mt-24"
         >
             <div className="max-w-6xl mx-auto">
 
                 {/* Header */}
-                <div className="mb-16">
-
+                <div
+                    className={`
+                        mb-16
+                        transition-all
+                        duration-700
+                        ${
+                            isVisible
+                                ? "opacity-100 translate-y-0"
+                                : "opacity-0 translate-y-10"
+                        }
+                    `}
+                >
                     <div className="flex items-center gap-4 mb-6">
                         <span className="w-10 h-px bg-red-500"></span>
 
@@ -55,144 +97,159 @@ function Skills() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
-
-                        <h1 className="text-6xl md:text-7xl font-bold leading-[0.9] tracking-tight">
+                        <h1 className="text-6xl md:text-8xl font-bold leading-[0.85] tracking-tight">
                             What I
                             <br />
-                            <span className="text-red-500">
-                                Work With
+                            <span className="text-[#777]">
+                                Work With<span className="text-red-500">.</span>
                             </span>
                         </h1>
 
                         <p className="text-gray-400 text-lg leading-relaxed max-w-lg lg:ml-auto">
                             Technologies and tools I've been learning and
                             using while building projects as a student
-                            developer
+                            developer.
                         </p>
-
                     </div>
-
                 </div>
 
-
                 {/* Skill Categories */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                    {skillGroups.map((group) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {skillGroups.map((group, groupIndex) => (
                         <article
                             key={group.number}
-                            className="
+                            className={`
                                 group
                                 relative
+                                bg-[#080808]
                                 border
                                 border-[#242424]
-                                rounded-2xl
-                                bg-[#080808]
                                 p-7
                                 transition-all
-                                duration-500
-                                hover:-translate-y-2
-                                hover:border-red-500/70
-                            "
+                                duration-700
+                                hover:-translate-y-1
+                                hover:border-[#444]
+                                ${
+                                    isVisible
+                                        ? "opacity-100 translate-y-0"
+                                        : "opacity-0 translate-y-12"
+                                }
+                            `}
+                            style={{
+                                transitionDelay: `${200 + groupIndex * 150}ms`,
+                            }}
                         >
-
-                            {/* Red top line */}
-                            <div
+                            {/* Hover Accent */}
+                            <span
                                 className="
                                     absolute
                                     top-0
-                                    left-7
-                                    right-7
+                                    left-0
+                                    w-full
                                     h-px
                                     bg-red-500
-                                    scale-x-0
                                     origin-left
+                                    scale-x-0
+                                    group-hover:scale-x-100
                                     transition-transform
                                     duration-500
-                                    group-hover:scale-x-100
                                 "
                             />
 
+                            {/* Category Header */}
+                            <div className="flex items-start justify-between mb-10">
+                                <div>
+                                    <p className="text-red-500 text-xs font-semibold tracking-[0.25em] uppercase">
+                                        {group.number}
+                                    </p>
 
-                            {/* Number */}
-                            <div className="flex items-center justify-between mb-8">
+                                    <h2 className="text-2xl font-bold mt-3">
+                                        {group.title}
+                                        <span className="text-red-500">.</span>
+                                    </h2>
+                                </div>
 
-                                <span className="text-red-500 text-sm font-semibold tracking-[0.2em]">
+                                <span className="text-[#222] text-5xl font-bold leading-none">
                                     {group.number}
                                 </span>
-
-                                <span className="text-[#292929] text-4xl font-bold">
-                                    {group.number}
-                                </span>
-
                             </div>
 
-
-                            {/* Title */}
-                            <h2 className="text-2xl font-bold">
-                                {group.title}
-                                <span className="text-red-500">.</span>
-                            </h2>
-
-                            <p className="text-gray-500 text-sm leading-relaxed mt-3 mb-7">
+                            {/* Description */}
+                            <p className="text-gray-500 text-sm leading-relaxed pb-7 border-b border-[#242424]">
                                 {group.description}
                             </p>
 
-
                             {/* Skills */}
-                            <div className="border-t border-[#242424]">
-
+                            <div className="mt-2">
                                 {group.skills.map((skill, index) => (
                                     <div
                                         key={skill}
                                         className="
+                                            group/skill
                                             flex
                                             items-center
                                             justify-between
                                             py-4
                                             border-b
-                                            border-[#1f1f1f]
+                                            border-[#1c1c1c]
                                             last:border-b-0
                                             transition-all
                                             duration-300
                                             hover:pl-2
                                         "
                                     >
-
                                         <div className="flex items-center gap-3">
+                                            <span
+                                                className="
+                                                    w-1.5
+                                                    h-1.5
+                                                    bg-red-500
+                                                    rounded-full
+                                                    transition-transform
+                                                    duration-300
+                                                    group-hover/skill:scale-150
+                                                "
+                                            />
 
-                                            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-
-                                            <span className="text-gray-300">
+                                            <span className="text-gray-300 group-hover/skill:text-white transition-colors duration-300">
                                                 {skill}
                                             </span>
-
                                         </div>
 
                                         <span className="text-[#444] text-xs">
-                                            0{index + 1}
+                                            {String(index + 1).padStart(2, "0")}
                                         </span>
-
                                     </div>
                                 ))}
-
                             </div>
-
                         </article>
                     ))}
-
                 </div>
 
-
-                {/* Bottom statement */}
-                <div className="mt-12 flex items-center gap-4">
-
+                {/* Bottom Statement */}
+                <div
+                    className={`
+                        mt-12
+                        flex
+                        items-center
+                        gap-4
+                        transition-all
+                        duration-700
+                        ${
+                            isVisible
+                                ? "opacity-100 translate-y-0"
+                                : "opacity-0 translate-y-8"
+                        }
+                    `}
+                    style={{
+                        transitionDelay: "700ms",
+                    }}
+                >
                     <span className="w-8 h-px bg-red-500"></span>
 
                     <p className="text-sm text-gray-600">
-                        I'm still learning, and this list will keep growing
+                        I'm still learning, and this list will keep growing.
                     </p>
-
                 </div>
 
             </div>

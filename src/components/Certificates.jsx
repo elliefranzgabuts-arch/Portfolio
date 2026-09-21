@@ -1,7 +1,12 @@
+import { useEffect, useRef, useState } from "react";
+
 import certificate1 from "../assets/images/certificate1.jpeg";
 import certificate2 from "../assets/images/certificate2.jpeg";
 
 function Certificates() {
+    const [isVisible, setIsVisible] = useState(false);
+    const certificatesRef = useRef(null);
+
     const certificates = [
         {
             number: "01",
@@ -21,16 +26,49 @@ function Certificates() {
         },
     ];
 
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
+                }
+            },
+            {
+                threshold: 0.15,
+            }
+        );
+
+        if (certificatesRef.current) {
+            observer.observe(certificatesRef.current);
+        }
+
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
+
     return (
         <section
+            ref={certificatesRef}
             id="certificates"
-            className="bg-black text-white px-6 md:px-10 py-28"
+            className="bg-black text-white px-6 md:px-10 py-28 scroll-mt-24 overflow-hidden"
         >
             <div className="max-w-6xl mx-auto">
 
-                {/* Header */}
-                <div className="mb-16">
-
+                {/* HEADER */}
+                <div
+                    className={`
+                        mb-20
+                        transition-all
+                        duration-700
+                        ${
+                            isVisible
+                                ? "opacity-100 translate-y-0"
+                                : "opacity-0 translate-y-10"
+                        }
+                    `}
+                >
                     <div className="flex items-center gap-4 mb-6">
                         <span className="w-10 h-px bg-red-500"></span>
 
@@ -41,11 +79,12 @@ function Certificates() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
 
-                        <h1 className="text-6xl md:text-7xl font-bold leading-[0.9] tracking-tight">
+                        <h1 className="text-6xl md:text-8xl font-bold leading-[0.85] tracking-tight">
                             Learning
                             <br />
-                            <span className="text-red-500">
-                                Along The Way.
+                            <span className="text-[#777]">
+                                Along The Way
+                                <span className="text-red-500">.</span>
                             </span>
                         </h1>
 
@@ -56,140 +95,162 @@ function Certificates() {
                         </p>
 
                     </div>
-
                 </div>
 
-
-                {/* Certificates */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-                    {certificates.map((certificate) => (
+                {/* CERTIFICATES */}
+                <div>
+                    {certificates.map((certificate, index) => (
                         <article
                             key={certificate.number}
-                            className="
+                            className={`
                                 group
-                                relative
-                                border
+                                border-t
                                 border-[#242424]
-                                rounded-2xl
-                                bg-[#080808]
-                                p-5
+                                py-10
+                                md:py-14
                                 transition-all
-                                duration-500
-                                hover:-translate-y-2
-                                hover:border-red-500/70
-                            "
+                                duration-700
+                                ${
+                                    isVisible
+                                        ? "opacity-100 translate-y-0"
+                                        : "opacity-0 translate-y-12"
+                                }
+                            `}
+                            style={{
+                                transitionDelay: `${200 + index * 180}ms`,
+                            }}
                         >
-
-                            {/* Red Accent */}
+                            {/* RED TOP LINE */}
                             <div
                                 className="
                                     absolute
-                                    top-0
-                                    left-8
-                                    right-8
+                                    left-0
+                                    w-0
                                     h-px
                                     bg-red-500
-                                    scale-x-0
-                                    origin-left
-                                    transition-transform
+                                    transition-all
                                     duration-500
-                                    group-hover:scale-x-100
+                                    group-hover:w-full
                                 "
                             />
 
-                            {/* Certificate Image */}
-                            <div
-                                className="
-                                    relative
-                                    rounded-xl
-                                    bg-black
-                                    border
-                                    border-[#242424]
-                                    overflow-hidden
-                                "
-                            >
-                                <img
-                                    src={certificate.image}
-                                    alt={certificate.title}
-                                    className="
-                                        w-full
-                                        h-auto
-                                        object-cover
-                                        transition-transform
-                                        duration-500
-                                        group-hover:scale-[1.02]
-                                    "
-                                />
+                            <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 lg:gap-16 items-center">
 
-                                {/* Year */}
-                                <div className="absolute top-5 right-5">
-                                    <span
+                                {/* CERTIFICATE IMAGE */}
+                                <div className="relative overflow-hidden bg-[#080808]">
+                                    <img
+                                        src={certificate.image}
+                                        alt={certificate.title}
                                         className="
-                                            border
-                                            border-white/20
-                                            bg-black/70
+                                            block
+                                            w-full
+                                            h-auto
+                                            transition-transform
+                                            duration-700
+                                            group-hover:scale-[1.02]
+                                        "
+                                    />
+
+                                    {/* YEAR */}
+                                    <div
+                                        className="
+                                            absolute
+                                            top-4
+                                            right-4
+                                            md:top-6
+                                            md:right-6
+                                            bg-black/80
                                             backdrop-blur-sm
-                                            rounded-full
                                             px-3
-                                            py-1
-                                            text-xs
-                                            text-gray-300
+                                            py-2
                                         "
                                     >
-                                        {certificate.year}
-                                    </span>
+                                        <span className="text-xs text-gray-300 tracking-[0.15em]">
+                                            {certificate.year}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Details */}
-                            <div className="px-2 pt-7 pb-3">
+                                {/* DETAILS */}
+                                <div>
 
-                                <div className="flex items-start justify-between gap-5">
+                                    <div className="flex items-center gap-4 mb-5">
+                                        <span className="text-red-500 text-sm font-semibold tracking-[0.2em]">
+                                            {certificate.number}
+                                        </span>
 
-                                    <div>
+                                        <span className="w-8 h-px bg-[#333]"></span>
 
-                                        <p className="text-red-500 text-xs font-semibold tracking-[0.2em] uppercase mb-3">
-                                            Certificate {certificate.number}
+                                        <p className="text-gray-600 text-xs font-semibold tracking-[0.2em] uppercase">
+                                            Certificate
                                         </p>
-
-                                        <h2 className="text-2xl md:text-3xl font-bold">
-                                            {certificate.title}
-                                            <span className="text-red-500">
-                                                .
-                                            </span>
-                                        </h2>
-
                                     </div>
 
-                                    <span className="text-[#333] text-4xl font-bold">
-                                        {certificate.number}
-                                    </span>
+                                    <h2
+                                        className="
+                                            text-3xl
+                                            md:text-4xl
+                                            font-bold
+                                            tracking-tight
+                                            leading-tight
+                                            transition-transform
+                                            duration-300
+                                            group-hover:translate-x-1
+                                        "
+                                    >
+                                        {certificate.title}
+                                        <span className="text-red-500">.</span>
+                                    </h2>
+
+                                    <p className="text-gray-400 leading-relaxed mt-6 max-w-xl">
+                                        {certificate.description}
+                                    </p>
+
+                                    <div className="mt-8 flex items-center gap-4">
+                                        <span className="text-xs text-gray-600 tracking-[0.2em] uppercase">
+                                            Year
+                                        </span>
+
+                                        <span className="text-sm text-gray-300">
+                                            {certificate.year}
+                                        </span>
+                                    </div>
 
                                 </div>
 
-                                <p className="text-gray-400 leading-relaxed mt-5">
-                                    {certificate.description}
-                                </p>
-
                             </div>
-
                         </article>
                     ))}
-
                 </div>
 
-
-                {/* Bottom Message */}
-                <div className="mt-12 border-t border-[#1f1f1f] pt-6 flex items-center gap-4">
-
+                {/* BOTTOM */}
+                <div
+                    className={`
+                        border-t
+                        border-[#242424]
+                        pt-6
+                        mt-0
+                        flex
+                        items-center
+                        gap-4
+                        transition-all
+                        duration-700
+                        ${
+                            isVisible
+                                ? "opacity-100 translate-y-0"
+                                : "opacity-0 translate-y-8"
+                        }
+                    `}
+                    style={{
+                        transitionDelay: "700ms",
+                    }}
+                >
                     <span className="w-8 h-px bg-red-500"></span>
 
                     <p className="text-sm text-gray-600">
                         Every experience is another opportunity to learn
                         something new.
                     </p>
-
                 </div>
 
             </div>
