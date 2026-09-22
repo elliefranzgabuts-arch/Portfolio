@@ -53,19 +53,29 @@ app.post("/api/contact", async (req, res) => {
     }
 });
 
-app.get("/api/visitors", async (req, res) => {
+app.post("/api/visitors", async (req, res) => {
+    const { visitorId } = req.body;
+
+    if (!visitorId) {
+        return res.status(400).json({
+            success: false,
+            message: "Visitor ID is required.",
+        });
+    }
+
     try {
         await db.execute(
-            "UPDATE site_stats SET visitor_count = visitor_count + 1 WHERE id = 1"
+            "INSERT IGNORE INTO unique_visitors (visitor_id) VALUES (?)",
+            [visitorId]
         );
 
         const [rows] = await db.execute(
-            "SELECT visitor_count FROM site_stats WHERE id = 1"
+            "SELECT COUNT(*) AS visitorCount FROM unique_visitors"
         );
 
         res.json({
             success: true,
-            visitorCount: rows[0].visitor_count,
+            visitorCount: rows[0].visitorCount,
         });
     } catch (error) {
         console.error("Visitor counter error:", error);

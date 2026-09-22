@@ -4,7 +4,20 @@ function Footer() {
     const [visitorCount, setVisitorCount] = useState(null);
 
     useEffect(() => {
-        fetch("http://localhost:5000/api/visitors")
+        let visitorId = localStorage.getItem("visitorId");
+
+        if (!visitorId) {
+            visitorId = crypto.randomUUID();
+            localStorage.setItem("visitorId", visitorId);
+        }
+
+        fetch("http://localhost:5000/api/visitors", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ visitorId }),
+        })
             .then((response) => response.json())
             .then((data) => {
                 if (data.success) {
