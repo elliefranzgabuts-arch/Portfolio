@@ -1,145 +1,89 @@
+import express from "express";
+import cors from "cors";
+import mysql from "mysql2/promise";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
-const express = require("express");
-const cors = require("cors");
-const mysql = require("mysql2/promise");
-const fs = require("fs");
-const jwt = require("jsonwebtoken");
-const rateLimit = require("express-rate-limit");
-require("dotenv").config();
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = [
-    "http://localhost:5173",
-    process.env.FRONTEND_URL,
-].filter(Boolean);
-
 app.use(
     cors({
-        origin: (origin, callback) => {
-            if (!origin || allowedOrigins.includes(origin)) {
-                return callback(null, true);
-            }
-
-            return callback(new Error("Not allowed by CORS"));
-        },
+        origin: [
+            "http://localhost:5173",
+            "https://elliefranzgabuts-arch.github.io",
+        ],
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type", "Authorization"],
     })
 );
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 10,
-    standardHeaders: "draft-8",
-    legacyHeaders: false,
-    message: {
-        success: false,
-        message: "Too many login attempts. Please try again later.",
-    },
-});
-
-const visitorLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 30,
-    standardHeaders: "draft-8",
-    legacyHeaders: false,
-    message: {
-        success: false,
-        message: "Too many visitor requests. Please try again later.",
-    },
-});
-
-const db = mysql.createPool({
+const pool = mysql.createPool({
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    port: Number(process.env.DB_PORT),
-    ssl: {
-        ca: fs.readFileSync("./ca.pem"),
-    },
+    ssl:
+        process.env.DB_SSL === "true"
+            ? {
+                  ca: process.env.DB_CA,
+              }
+            : undefined,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
 });
-
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-        return res.status(401).json({
-            success: false,
-            message: "Authentication required.",
-        });
-    }
-
-    const token = authHeader.split(" ")[1];
-
-    if (!token) {
-        return res.status(401).json({
-            success: false,
-            message: "Invalid authentication format.",
-        });
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({
-                success: false,
-                message: "Invalid or expired token.",
-            });
-        }
-
-        req.user = user;
-        next();
-    });
-}
 
 app.get("/", (req, res) => {
     res.json({
-        message: "Backend is running!",
+        success: true,
+        message: "Portfolio backend is running.",
     });
 });
 
-app.post("/api/visitors", visitorLimiter, async (req, res) => {
+app.post("/api/visitors", async (req, res) => {
     try {
         const { visitorId } = req.body;
 
-        if (
-            typeof visitorId !== "string" ||
-            !visitorId.trim() ||
-            visitorId.trim().length > 100
-        ) {
+        if (!visitorId || typeof visitorId !== "string") {
             return res.status(400).json({
                 success: false,
                 message: "Invalid visitor ID.",
             });
         }
 
-        await db.execute(
+        await pool.execute(
             `
-            INSERT IGNORE INTO unique_visitors (visitor_id)
+            INSERT IGNORE INTO visitors (visitor_id)
             VALUES (?)
             `,
-            [visitorId.trim()]
+            [visitorId]
         );
 
-        const [rows] = await db.execute(
+        const [rows] = await pool.execute(
             `
             SELECT COUNT(*) AS totalVisitors
-            FROM unique_visitors
+            FROM visitors
             `
         );
 
-        res.json({
+        return res.json({
             success: true,
             totalVisitors: rows[0].totalVisitors,
         });
     } catch (error) {
-        console.error("Visitor tracking error:", error);
+        console.error("Visitor error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            message: "Failed to track visitor.",
+            message: "Failed to record visitor.",
         });
     }
 });
@@ -148,145 +92,160 @@ app.post("/api/contact", async (req, res) => {
     try {
         const { name, email, message } = req.body;
 
-        if (
-            typeof name !== "string" ||
-            typeof email !== "string" ||
-            typeof message !== "string"
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid input.",
-            });
-        }
-
-        const cleanName = name.trim();
-        const cleanEmail = email.trim().toLowerCase();
-        const cleanMessage = message.trim();
-
-        if (!cleanName || !cleanEmail || !cleanMessage) {
+        if (!name || !email || !message) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required.",
             });
         }
 
-        if (cleanName.length < 2 || cleanName.length > 100) {
-            return res.status(400).json({
-                success: false,
-                message: "Name must be between 2 and 100 characters.",
-            });
-        }
-
-        if (cleanEmail.length > 150) {
-            return res.status(400).json({
-                success: false,
-                message: "Email is too long.",
-            });
-        }
-
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        if (!emailPattern.test(cleanEmail)) {
-            return res.status(400).json({
-                success: false,
-                message: "Please enter a valid email address.",
-            });
-        }
-
-        if (cleanMessage.length < 2 || cleanMessage.length > 2000) {
-            return res.status(400).json({
-                success: false,
-                message: "Message must be between 2 and 2000 characters.",
-            });
-        }
-
-        await db.execute(
+        await pool.execute(
             `
-            INSERT INTO contact_messages
-            (name, email, message)
+            INSERT INTO messages (name, email, message)
             VALUES (?, ?, ?)
             `,
-            [cleanName, cleanEmail, cleanMessage]
+            [name.trim(), email.trim(), message.trim()]
         );
 
-        res.json({
+        return res.json({
             success: true,
             message: "Message sent successfully.",
         });
     } catch (error) {
-        console.error("Contact form error:", error);
+        console.error("Contact error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Failed to send message.",
         });
     }
 });
 
-app.post("/api/login", loginLimiter, (req, res) => {
-    const { password } = req.body;
+app.post("/api/login", async (req, res) => {
+    try {
+        const { password } = req.body;
 
-    if (!password) {
-        return res.status(400).json({
-            success: false,
-            message: "Password is required.",
-        });
-    }
-
-    if (password !== process.env.ADMIN_PASSWORD) {
-        return res.status(401).json({
-            success: false,
-            message: "Invalid password.",
-        });
-    }
-
-    const token = jwt.sign(
-        {
-            role: "admin",
-        },
-        process.env.JWT_SECRET,
-        {
-            expiresIn: "2h",
+        if (!password) {
+            return res.status(400).json({
+                success: false,
+                message: "Password is required.",
+            });
         }
-    );
 
-    res.json({
-        success: true,
-        message: "Login successful.",
-        token,
-    });
+        const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
+
+        if (!adminPasswordHash) {
+            console.error("ADMIN_PASSWORD_HASH is not configured.");
+
+            return res.status(500).json({
+                success: false,
+                message: "Admin authentication is not configured.",
+            });
+        }
+
+        const passwordMatch = await bcrypt.compare(
+            password,
+            adminPasswordHash
+        );
+
+        if (!passwordMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid password.",
+            });
+        }
+
+        const token = jwt.sign(
+            {
+                role: "admin",
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "2h",
+            }
+        );
+
+        return res.json({
+            success: true,
+            token,
+        });
+    } catch (error) {
+        console.error("Login error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Login failed.",
+        });
+    }
 });
 
-app.get("/api/analytics", authenticateToken, async (req, res) => {
+function authenticateAdmin(req, res, next) {
     try {
-        const [visitorRows] = await db.execute(
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required.",
+            });
+        }
+
+        const token = authHeader.split(" ")[1];
+
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+
+        if (decoded.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied.",
+            });
+        }
+
+        req.admin = decoded;
+
+        next();
+    } catch (error) {
+        return res.status(401).json({
+            success: false,
+            message: "Invalid or expired token.",
+        });
+    }
+}
+
+app.get("/api/analytics", authenticateAdmin, async (req, res) => {
+    try {
+        const [visitorRows] = await pool.execute(
             `
             SELECT COUNT(*) AS totalVisitors
-            FROM unique_visitors
+            FROM visitors
             `
         );
 
-        const [messageRows] = await db.execute(
+        const [messageRows] = await pool.execute(
             `
             SELECT COUNT(*) AS totalMessages
-            FROM contact_messages
+            FROM messages
             `
         );
 
-        const [latestMessages] = await db.execute(
+        const [latestMessages] = await pool.execute(
             `
             SELECT
+                id,
                 name,
                 email,
                 message,
                 created_at
-            FROM contact_messages
+            FROM messages
             ORDER BY created_at DESC
             LIMIT 10
             `
         );
 
-        res.json({
+        return res.json({
             success: true,
             totalVisitors: visitorRows[0].totalVisitors,
             totalMessages: messageRows[0].totalMessages,
@@ -295,14 +254,13 @@ app.get("/api/analytics", authenticateToken, async (req, res) => {
     } catch (error) {
         console.error("Analytics error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Failed to load analytics.",
         });
     }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-

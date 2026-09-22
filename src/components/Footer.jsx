@@ -18,10 +18,18 @@ function Footer() {
             },
             body: JSON.stringify({ visitorId }),
         })
-            .then((response) => response.json())
+            .then(async (response) => {
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || "Visitor request failed");
+                }
+
+                return data;
+            })
             .then((data) => {
                 if (data.success) {
-                    setVisitorCount(data.visitorCount);
+                    setVisitorCount(data.totalVisitors);
                 }
             })
             .catch((error) => {
@@ -32,6 +40,7 @@ function Footer() {
     return (
         <footer className="border-t border-white/10 bg-black px-6 py-5">
             <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-center text-sm text-gray-500 sm:flex-row sm:text-left">
+
                 <a
                     href="#home"
                     className="font-semibold text-white transition-colors hover:text-red-500"
@@ -65,12 +74,14 @@ function Footer() {
                 <div className="flex flex-col items-center gap-1 sm:items-end">
                     <p>© 2026 Ellie Franz M. Gabutin</p>
 
-                    {visitorCount !== null && (
-                        <p className="text-xs text-gray-600">
-                            Visitors: {visitorCount}
-                        </p>
-                    )}
+                    <p className="text-xs text-gray-600">
+                        Visitors:{" "}
+                        {visitorCount !== null
+                            ? visitorCount
+                            : "Loading..."}
+                    </p>
                 </div>
+
             </div>
         </footer>
     );
