@@ -4,6 +4,7 @@ import mysql from "mysql2/promise";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config();
 
@@ -26,16 +27,14 @@ app.use(express.urlencoded({ extended: true }));
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 3306,
+    port: Number(process.env.DB_PORT),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    ssl:
-        process.env.DB_SSL === "true"
-            ? {
-                  ca: process.env.DB_CA,
-              }
-            : undefined,
+    ssl: {
+        ca: fs.readFileSync(new URL("./ca.pem", import.meta.url)),
+        rejectUnauthorized: true,
+    },
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
@@ -76,14 +75,14 @@ app.post("/api/visitors", async (req, res) => {
 
         return res.json({
             success: true,
-            totalVisitors: rows[0].totalVisitors,
+            totalVisitors: Number(rows[0].totalVisitors),
         });
     } catch (error) {
         console.error("Visitor error:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Failed to record visitor.",
+            message: error.message || "Failed to record visitor.",
         });
     }
 });
@@ -101,7 +100,7 @@ app.post("/api/contact", async (req, res) => {
 
         await pool.execute(
             `
-            INSERT INTO messages (name, email, message)
+            INSERT INTO contact_messages (name, email, message)
             VALUES (?, ?, ?)
             `,
             [name.trim(), email.trim(), message.trim()]
@@ -116,7 +115,7 @@ app.post("/api/contact", async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Failed to send message.",
+            message: error.message || "Failed to send message.",
         });
     }
 });
@@ -174,7 +173,7 @@ app.post("/api/login", async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Login failed.",
+            message: error.message || "Login failed.",
         });
     }
 });
@@ -208,6 +207,8 @@ function authenticateAdmin(req, res, next) {
 
         next();
     } catch (error) {
+        console.error("Authentication error:", error);
+
         return res.status(401).json({
             success: false,
             message: "Invalid or expired token.",
@@ -227,7 +228,7 @@ app.get("/api/analytics", authenticateAdmin, async (req, res) => {
         const [messageRows] = await pool.execute(
             `
             SELECT COUNT(*) AS totalMessages
-            FROM messages
+            FROM contact_messages
             `
         );
 
@@ -239,7 +240,7 @@ app.get("/api/analytics", authenticateAdmin, async (req, res) => {
                 email,
                 message,
                 created_at
-            FROM messages
+            FROM contact_messages
             ORDER BY created_at DESC
             LIMIT 10
             `
@@ -247,8 +248,8 @@ app.get("/api/analytics", authenticateAdmin, async (req, res) => {
 
         return res.json({
             success: true,
-            totalVisitors: visitorRows[0].totalVisitors,
-            totalMessages: messageRows[0].totalMessages,
+            totalVisitors: Number(visitorRows[0].totalVisitors),
+            totalMessages: Number(messageRows[0].totalMessages),
             latestMessages,
         });
     } catch (error) {
@@ -256,7 +257,7 @@ app.get("/api/analytics", authenticateAdmin, async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Failed to load analytics.",
+            message: error.message || "Failed to load analytics.",
         });
     }
 });

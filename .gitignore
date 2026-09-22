@@ -24,5 +24,4 @@ dist-ssr
 *.sw?
 
 server/.env
-server/ca.pem
 .env
