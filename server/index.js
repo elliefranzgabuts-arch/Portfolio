@@ -3,13 +3,37 @@ const cors = require("cors");
 const mysql = require("mysql2/promise");
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
+const rateLimit = require("express-rate-limit");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// =========================
+// Middleware
+// =========================
+
 app.use(cors());
 app.use(express.json());
+
+// =========================
+// Login Rate Limiter
+// =========================
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many login attempts. Please try again later.",
+    },
+});
+
+// =========================
+// Database Connection
+// =========================
 
 const db = mysql.createPool({
     host: process.env.DB_HOST,
@@ -22,30 +46,45 @@ const db = mysql.createPool({
     },
 });
 
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(" ")[1];
+// =========================
+// JWT Authentication
+// =========================
 
-    if (!token) {
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
         return res.status(401).json({
             success: false,
             message: "Authentication required.",
         });
     }
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const token = authHeader.split(" ")[1];
 
-        req.user = decoded;
-
-        next();
-    } catch (error) {
-        return res.status(403).json({
+    if (!token) {
+        return res.status(401).json({
             success: false,
-            message: "Invalid or expired token.",
+            message: "Invalid authentication format.",
         });
     }
-};
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({
+                success: false,
+                message: "Invalid or expired token.",
+            });
+        }
+
+        req.user = user;
+        next();
+    });
+}
+
+// =========================
+// Health Check
+// =========================
 
 app.get("/", (req, res) => {
     res.json({
@@ -53,71 +92,93 @@ app.get("/", (req, res) => {
     });
 });
 
-app.post("/api/contact", async (req, res) => {
-    const { name, email, message } = req.body;
+// =========================
+// Visitor Tracking
+// =========================
 
-    if (!name || !email || !message) {
-        return res.status(400).json({
+app.post("/api/visitors", async (req, res) => {
+    try {
+        const { visitorId } = req.body;
+
+        if (!visitorId) {
+            return res.status(400).json({
+                success: false,
+                message: "Visitor ID is required.",
+            });
+        }
+
+        await db.execute(
+            `
+            INSERT IGNORE INTO unique_visitors (visitor_id)
+            VALUES (?)
+            `,
+            [visitorId]
+        );
+
+        const [rows] = await db.execute(
+            `
+            SELECT COUNT(*) AS totalVisitors
+            FROM unique_visitors
+            `
+        );
+
+        res.json({
+            success: true,
+            totalVisitors: rows[0].totalVisitors,
+        });
+    } catch (error) {
+        console.error("Visitor tracking error:", error);
+
+        res.status(500).json({
             success: false,
-            message: "Please fill in all fields.",
+            message: "Failed to track visitor.",
         });
     }
+});
 
+// =========================
+// Contact Form
+// =========================
+
+app.post("/api/contact", async (req, res) => {
     try {
+        const { name, email, message } = req.body;
+
+        if (!name || !email || !message) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required.",
+            });
+        }
+
         await db.execute(
-            "INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)",
+            `
+            INSERT INTO contact_messages
+            (name, email, message)
+            VALUES (?, ?, ?)
+            `,
             [name, email, message]
         );
 
         res.json({
             success: true,
-            message: "Contact message saved!",
+            message: "Message sent successfully.",
         });
     } catch (error) {
-        console.error("Database error:", error);
+        console.error("Contact form error:", error);
 
         res.status(500).json({
             success: false,
-            message: "Failed to save contact message.",
+            message: "Failed to send message.",
         });
     }
 });
 
-app.post("/api/visitors", async (req, res) => {
-    const { visitorId } = req.body;
+// =========================
+// Admin Login
+// =========================
 
-    if (!visitorId) {
-        return res.status(400).json({
-            success: false,
-            message: "Visitor ID is required.",
-        });
-    }
-
-    try {
-        await db.execute(
-            "INSERT IGNORE INTO unique_visitors (visitor_id) VALUES (?)",
-            [visitorId]
-        );
-
-        const [rows] = await db.execute(
-            "SELECT COUNT(*) AS visitorCount FROM unique_visitors"
-        );
-
-        res.json({
-            success: true,
-            visitorCount: rows[0].visitorCount,
-        });
-    } catch (error) {
-        console.error("Visitor counter error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to update visitor count.",
-        });
-    }
-});
-
-app.post("/api/login", (req, res) => {
+app.post("/api/login", loginLimiter, (req, res) => {
     const { password } = req.body;
 
     if (!password) {
@@ -151,18 +212,37 @@ app.post("/api/login", (req, res) => {
     });
 });
 
+// =========================
+// Analytics
+// =========================
+
 app.get("/api/analytics", authenticateToken, async (req, res) => {
     try {
         const [visitorRows] = await db.execute(
-            "SELECT COUNT(*) AS totalVisitors FROM unique_visitors"
+            `
+            SELECT COUNT(*) AS totalVisitors
+            FROM unique_visitors
+            `
         );
 
         const [messageRows] = await db.execute(
-            "SELECT COUNT(*) AS totalMessages FROM contact_messages"
+            `
+            SELECT COUNT(*) AS totalMessages
+            FROM contact_messages
+            `
         );
 
         const [latestMessages] = await db.execute(
-            "SELECT id, name, email, message, created_at FROM contact_messages ORDER BY created_at DESC LIMIT 5"
+            `
+            SELECT
+                name,
+                email,
+                message,
+                created_at
+            FROM contact_messages
+            ORDER BY created_at DESC
+            LIMIT 10
+            `
         );
 
         res.json({
@@ -181,6 +261,11 @@ app.get("/api/analytics", authenticateToken, async (req, res) => {
     }
 });
 
+// =========================
+// Start Server
+// =========================
+
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
 });
+
