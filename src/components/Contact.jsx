@@ -4,6 +4,41 @@ function Contact(props) {
     const [isVisible, setIsVisible] = useState(false);
     const contactRef = useRef(null);
 
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        message: "",
+    });
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await fetch("http://localhost:5000/api/contact", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert("Message sent successfully!");
+
+                setFormData({
+                    name: "",
+                    email: "",
+                    message: "",
+                });
+            }
+        } catch (error) {
+            console.error("Error sending message:", error);
+            alert("Failed to send message.");
+        }
+    };
+
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
@@ -223,6 +258,64 @@ function Contact(props) {
                                 </p>
                             </div>
 
+                        </div>
+
+                        {/* CONTACT FORM */}
+                        <div className="mt-10">
+                            <p className="text-xs font-semibold tracking-[0.25em] text-gray-600 uppercase mb-5">
+                                Send a message
+                            </p>
+
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <input
+                                    type="text"
+                                    name="name"
+                                    placeholder="Your name"
+                                    value={formData.name}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            name: e.target.value,
+                                        })
+                                    }
+                                    className="w-full bg-transparent border-b border-[#242424] py-3 text-white outline-none focus:border-red-500"
+                                />
+
+                                <input
+                                    type="email"
+                                    name="email"
+                                    placeholder="Your email"
+                                    value={formData.email}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            email: e.target.value,
+                                        })
+                                    }
+                                    className="w-full bg-transparent border-b border-[#242424] py-3 text-white outline-none focus:border-red-500"
+                                />
+
+                                <textarea
+                                    name="message"
+                                    placeholder="Your message"
+                                    rows="4"
+                                    value={formData.message}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            message: e.target.value,
+                                        })
+                                    }
+                                    className="w-full bg-transparent border-b border-[#242424] py-3 text-white outline-none resize-none focus:border-red-500"
+                                />
+
+                                <button
+                                    type="submit"
+                                    className="border border-red-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-500"
+                                >
+                                    Send Message
+                                </button>
+                            </form>
                         </div>
 
                         {/* SOCIALS */}

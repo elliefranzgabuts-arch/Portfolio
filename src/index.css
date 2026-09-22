@@ -1,1 +1,42 @@
 @import "tailwindcss";
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        background: #000;
+    }
+
+    body {
+        min-width: 320px;
+        margin: 0;
+        background: #000;
+        color: #fff;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection {
+        background: rgba(239, 68, 68, 0.28);
+        color: #fff;
+    }
+
+    :focus-visible {
+        outline: 2px solid #ef4444;
+        outline-offset: 3px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

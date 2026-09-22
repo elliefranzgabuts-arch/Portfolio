@@ -8,6 +8,7 @@ import Projects from "./components/Projects";
 import Journey from "./components/Journey";
 import Certificates from "./components/Certificates";
 import Contact from "./components/Contact";
+import Footer from "./components/Footer";
 
 function App() {
     const [activeSection, setActiveSection] = useState("home");
@@ -71,6 +72,8 @@ function App() {
                 email="elliefranzm.gabutin@gmail.com"
                 phone="09953216734"
             />
+
+            <Footer />
         </>
     );
 }

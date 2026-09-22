@@ -16,6 +16,17 @@ function Navbar({ activeSection, setActiveSection }) {
         };
     }, []);
 
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape") {
+                setMenuOpen(false);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
     const navItems = [
         { id: "home", label: "Home" },
         { id: "about", label: "About" },
@@ -86,6 +97,11 @@ function Navbar({ activeSection, setActiveSection }) {
                         transition-transform
                         duration-300
                         hover:scale-105
+                        focus-visible:outline-none
+                        focus-visible:ring-2
+                        focus-visible:ring-red-500
+                        focus-visible:ring-offset-2
+                        focus-visible:ring-offset-black
                     "
                 >
                     EF<span className="text-red-500">.</span>
@@ -104,6 +120,11 @@ function Navbar({ activeSection, setActiveSection }) {
                                 font-medium
                                 transition-colors
                                 duration-300
+                                focus-visible:outline-none
+                                focus-visible:ring-2
+                                focus-visible:ring-red-500
+                                focus-visible:ring-offset-4
+                                focus-visible:ring-offset-black
                                 ${
                                     activeSection === item.id
                                         ? "text-red-500"
@@ -123,6 +144,9 @@ function Navbar({ activeSection, setActiveSection }) {
                                     bg-red-500
                                     transition-all
                                     duration-300
+                                    focus-visible:outline-none
+                                    focus-visible:bg-white/5
+                                    focus-visible:text-red-500
                                     ${
                                         activeSection === item.id
                                             ? "w-full"
@@ -139,6 +163,7 @@ function Navbar({ activeSection, setActiveSection }) {
                     type="button"
                     aria-label={menuOpen ? "Close menu" : "Open menu"}
                     aria-expanded={menuOpen}
+                    aria-controls="mobile-menu"
                     onClick={() => setMenuOpen(!menuOpen)}
                     className="
                         md:hidden
@@ -153,6 +178,11 @@ function Navbar({ activeSection, setActiveSection }) {
                         transition-colors
                         duration-300
                         hover:text-red-500
+                        focus-visible:outline-none
+                        focus-visible:ring-2
+                        focus-visible:ring-red-500
+                        focus-visible:ring-offset-2
+                        focus-visible:ring-offset-black
                     "
                 >
                     <span
@@ -208,6 +238,7 @@ function Navbar({ activeSection, setActiveSection }) {
             {/* MOBILE MENU */}
             <div
                 className={`
+                    id="mobile-menu"
                     md:hidden
                     overflow-hidden
                     transition-all
