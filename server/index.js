@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2/promise");
+const fs = require("fs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
@@ -16,6 +17,9 @@ const db = mysql.createPool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     port: Number(process.env.DB_PORT),
+    ssl: {
+        ca: fs.readFileSync("./ca.pem"),
+    },
 });
 
 const authenticateToken = (req, res, next) => {
