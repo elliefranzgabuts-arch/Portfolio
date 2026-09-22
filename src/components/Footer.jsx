@@ -11,7 +11,7 @@ function Footer() {
             localStorage.setItem("visitorId", visitorId);
         }
 
-        fetch("http://localhost:5000/api/visitors", {
+        fetch(`${import.meta.env.VITE_API_URL}/api/visitors`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

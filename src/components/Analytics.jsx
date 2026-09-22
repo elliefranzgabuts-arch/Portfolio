@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 
 function Analytics() {
@@ -14,13 +15,16 @@ function Analytics() {
         setError("");
 
         try {
-            const response = await fetch("http://localhost:5000/api/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ password }),
-            });
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/login`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ password }),
+                }
+            );
 
             const data = await response.json();
 
@@ -56,7 +60,7 @@ function Analytics() {
         setLoading(true);
         setError("");
 
-        fetch("http://localhost:5000/api/analytics", {
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -65,7 +69,9 @@ function Analytics() {
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {
-                    throw new Error(data.message || "Failed to load analytics.");
+                    throw new Error(
+                        data.message || "Failed to load analytics."
+                    );
                 }
 
                 return data;
@@ -79,7 +85,9 @@ function Analytics() {
                 sessionStorage.removeItem("adminToken");
                 setIsAuthenticated(false);
                 setAnalytics(null);
-                setError("Your session has expired. Please log in again.");
+                setError(
+                    "Your session has expired. Please log in again."
+                );
             })
             .finally(() => {
                 setLoading(false);
@@ -102,7 +110,8 @@ function Analytics() {
                     </h1>
 
                     <p className="mt-2 text-gray-400">
-                        Enter your admin password to access the analytics dashboard.
+                        Enter your admin password to access the analytics
+                        dashboard.
                     </p>
 
                     <form onSubmit={handleLogin} className="mt-8">
@@ -117,7 +126,9 @@ function Analytics() {
                             id="admin-password"
                             type="password"
                             value={password}
-                            onChange={(event) => setPassword(event.target.value)}
+                            onChange={(event) =>
+                                setPassword(event.target.value)
+                            }
                             placeholder="Enter admin password"
                             className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none transition focus:border-red-500"
                             required
@@ -209,34 +220,36 @@ function Analytics() {
                                 </p>
                             ) : (
                                 <div className="space-y-4">
-                                    {analytics.latestMessages.map((message) => (
-                                        <div
-                                            key={message.id}
-                                            className="rounded-2xl border border-white/10 bg-white/5 p-6"
-                                        >
-                                            <div className="flex flex-col justify-between gap-2 sm:flex-row">
-                                                <div>
-                                                    <h3 className="font-semibold">
-                                                        {message.name}
-                                                    </h3>
+                                    {analytics.latestMessages.map(
+                                        (message) => (
+                                            <div
+                                                key={message.id}
+                                                className="rounded-2xl border border-white/10 bg-white/5 p-6"
+                                            >
+                                                <div className="flex flex-col justify-between gap-2 sm:flex-row">
+                                                    <div>
+                                                        <h3 className="font-semibold">
+                                                            {message.name}
+                                                        </h3>
 
-                                                    <p className="text-sm text-gray-500">
-                                                        {message.email}
+                                                        <p className="text-sm text-gray-500">
+                                                            {message.email}
+                                                        </p>
+                                                    </div>
+
+                                                    <p className="text-xs text-gray-500">
+                                                        {new Date(
+                                                            message.created_at
+                                                        ).toLocaleString()}
                                                     </p>
                                                 </div>
 
-                                                <p className="text-xs text-gray-500">
-                                                    {new Date(
-                                                        message.created_at
-                                                    ).toLocaleString()}
+                                                <p className="mt-4 whitespace-pre-wrap text-gray-300">
+                                                    {message.message}
                                                 </p>
                                             </div>
-
-                                            <p className="mt-4 whitespace-pre-wrap text-gray-300">
-                                                {message.message}
-                                            </p>
-                                        </div>
-                                    ))}
+                                        )
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -248,3 +261,4 @@ function Analytics() {
 }
 
 export default Analytics;
+
