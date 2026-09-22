@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import Home from "./components/Home";
@@ -9,8 +10,9 @@ import Journey from "./components/Journey";
 import Certificates from "./components/Certificates";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+import Analytics from "./components/Analytics";
 
-function App() {
+function Portfolio() {
     const [activeSection, setActiveSection] = useState("home");
 
     useEffect(() => {
@@ -30,8 +32,7 @@ function App() {
             },
             {
                 threshold: 0.3,
-            }
-        );
+        });
 
         sections.forEach((section) => {
             observer.observe(section);
@@ -52,29 +53,29 @@ function App() {
             />
 
             <Home />
-
             <About name="Ellie Franz" />
-
-            <Skills
-                skills={["HTML", "CSS", "JavaScript", "React"]}
-            />
-
+            <Skills skills={["HTML", "CSS", "JavaScript", "React"]} />
             <Projects project="Our Little World" />
-
             <Journey experience="an IT student" />
-
             <Certificates
                 certificate1="..."
                 certificate2="..."
             />
-
             <Contact
                 email="elliefranzm.gabutin@gmail.com"
                 phone="09953216734"
             />
-
             <Footer />
         </>
+    );
+}
+
+function App() {
+    return (
+        <Routes>
+            <Route path="/" element={<Portfolio />} />
+            <Route path="/admin" element={<Analytics />} />
+        </Routes>
     );
 }
 
