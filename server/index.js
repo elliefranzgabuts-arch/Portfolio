@@ -9,16 +9,8 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// =========================
-// Middleware
-// =========================
-
 app.use(cors());
 app.use(express.json());
-
-// =========================
-// Login Rate Limiter
-// =========================
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -31,9 +23,16 @@ const loginLimiter = rateLimit({
     },
 });
 
-// =========================
-// Database Connection
-// =========================
+const visitorLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many visitor requests. Please try again later.",
+    },
+});
 
 const db = mysql.createPool({
     host: process.env.DB_HOST,
@@ -45,10 +44,6 @@ const db = mysql.createPool({
         ca: fs.readFileSync("./ca.pem"),
     },
 });
-
-// =========================
-// JWT Authentication
-// =========================
 
 function authenticateToken(req, res, next) {
     const authHeader = req.headers.authorization;
@@ -82,28 +77,24 @@ function authenticateToken(req, res, next) {
     });
 }
 
-// =========================
-// Health Check
-// =========================
-
 app.get("/", (req, res) => {
     res.json({
         message: "Backend is running!",
     });
 });
 
-// =========================
-// Visitor Tracking
-// =========================
-
-app.post("/api/visitors", async (req, res) => {
+app.post("/api/visitors", visitorLimiter, async (req, res) => {
     try {
         const { visitorId } = req.body;
 
-        if (!visitorId) {
+        if (
+            typeof visitorId !== "string" ||
+            !visitorId.trim() ||
+            visitorId.trim().length > 100
+        ) {
             return res.status(400).json({
                 success: false,
-                message: "Visitor ID is required.",
+                message: "Invalid visitor ID.",
             });
         }
 
@@ -112,7 +103,7 @@ app.post("/api/visitors", async (req, res) => {
             INSERT IGNORE INTO unique_visitors (visitor_id)
             VALUES (?)
             `,
-            [visitorId]
+            [visitorId.trim()]
         );
 
         const [rows] = await db.execute(
@@ -136,18 +127,59 @@ app.post("/api/visitors", async (req, res) => {
     }
 });
 
-// =========================
-// Contact Form
-// =========================
-
 app.post("/api/contact", async (req, res) => {
     try {
         const { name, email, message } = req.body;
 
-        if (!name || !email || !message) {
+        if (
+            typeof name !== "string" ||
+            typeof email !== "string" ||
+            typeof message !== "string"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid input.",
+            });
+        }
+
+        const cleanName = name.trim();
+        const cleanEmail = email.trim().toLowerCase();
+        const cleanMessage = message.trim();
+
+        if (!cleanName || !cleanEmail || !cleanMessage) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required.",
+            });
+        }
+
+        if (cleanName.length < 2 || cleanName.length > 100) {
+            return res.status(400).json({
+                success: false,
+                message: "Name must be between 2 and 100 characters.",
+            });
+        }
+
+        if (cleanEmail.length > 150) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is too long.",
+            });
+        }
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailPattern.test(cleanEmail)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter a valid email address.",
+            });
+        }
+
+        if (cleanMessage.length < 2 || cleanMessage.length > 2000) {
+            return res.status(400).json({
+                success: false,
+                message: "Message must be between 2 and 2000 characters.",
             });
         }
 
@@ -157,7 +189,7 @@ app.post("/api/contact", async (req, res) => {
             (name, email, message)
             VALUES (?, ?, ?)
             `,
-            [name, email, message]
+            [cleanName, cleanEmail, cleanMessage]
         );
 
         res.json({
@@ -173,10 +205,6 @@ app.post("/api/contact", async (req, res) => {
         });
     }
 });
-
-// =========================
-// Admin Login
-// =========================
 
 app.post("/api/login", loginLimiter, (req, res) => {
     const { password } = req.body;
@@ -211,10 +239,6 @@ app.post("/api/login", loginLimiter, (req, res) => {
         token,
     });
 });
-
-// =========================
-// Analytics
-// =========================
 
 app.get("/api/analytics", authenticateToken, async (req, res) => {
     try {
@@ -261,11 +285,6 @@ app.get("/api/analytics", authenticateToken, async (req, res) => {
     }
 });
 
-// =========================
-// Start Server
-// =========================
-
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
 });
-
