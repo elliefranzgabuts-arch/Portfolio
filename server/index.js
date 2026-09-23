@@ -32,8 +32,8 @@ app.use(
 // Middleware
 // =========================
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 // =========================
 // Login Rate Limiter
@@ -47,6 +47,36 @@ const loginLimiter = rateLimit({
     message: {
         success: false,
         message: "Too many login attempts. Please try again later.",
+    },
+});
+
+// =========================
+// Contact Rate Limiter
+// =========================
+
+const contactLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many messages. Please try again later.",
+    },
+});
+
+// =========================
+// Visitor Rate Limiter
+// =========================
+
+const visitorLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many requests. Please try again later.",
     },
 });
 
@@ -72,19 +102,19 @@ const db = mysql.createPool({
 function authenticateToken(req, res, next) {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({
             success: false,
             message: "Authentication required.",
         });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.slice(7);
 
     if (!token) {
         return res.status(401).json({
             success: false,
-            message: "Invalid authentication format.",
+            message: "Invalid authentication token.",
         });
     }
 
@@ -93,6 +123,13 @@ function authenticateToken(req, res, next) {
             return res.status(403).json({
                 success: false,
                 message: "Invalid or expired token.",
+            });
+        }
+
+        if (user?.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied.",
             });
         }
 
@@ -116,14 +153,26 @@ app.get("/", (req, res) => {
 // Visitor Tracking
 // =========================
 
-app.post("/api/visitors", async (req, res) => {
+app.post("/api/visitors", visitorLimiter, async (req, res) => {
     try {
         const { visitorId } = req.body;
 
-        if (!visitorId) {
+        if (
+            typeof visitorId !== "string" ||
+            visitorId.trim().length === 0
+        ) {
             return res.status(400).json({
                 success: false,
-                message: "Visitor ID is required.",
+                message: "Valid visitor ID is required.",
+            });
+        }
+
+        const cleanVisitorId = visitorId.trim();
+
+        if (cleanVisitorId.length > 255) {
+            return res.status(400).json({
+                success: false,
+                message: "Visitor ID is too long.",
             });
         }
 
@@ -132,7 +181,7 @@ app.post("/api/visitors", async (req, res) => {
             INSERT IGNORE INTO unique_visitors (visitor_id)
             VALUES (?)
             `,
-            [visitorId]
+            [cleanVisitorId]
         );
 
         const [rows] = await db.execute(
@@ -160,14 +209,59 @@ app.post("/api/visitors", async (req, res) => {
 // Contact Form
 // =========================
 
-app.post("/api/contact", async (req, res) => {
+app.post("/api/contact", contactLimiter, async (req, res) => {
     try {
         const { name, email, message } = req.body;
 
-        if (!name || !email || !message) {
+        if (
+            typeof name !== "string" ||
+            typeof email !== "string" ||
+            typeof message !== "string"
+        ) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required.",
+            });
+        }
+
+        const cleanName = name.trim();
+        const cleanEmail = email.trim();
+        const cleanMessage = message.trim();
+
+        if (!cleanName || !cleanEmail || !cleanMessage) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required.",
+            });
+        }
+
+        if (cleanName.length > 100) {
+            return res.status(400).json({
+                success: false,
+                message: "Name is too long.",
+            });
+        }
+
+        if (cleanEmail.length > 150) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is too long.",
+            });
+        }
+
+        if (cleanMessage.length > 5000) {
+            return res.status(400).json({
+                success: false,
+                message: "Message is too long.",
+            });
+        }
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailPattern.test(cleanEmail)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a valid email address.",
             });
         }
 
@@ -177,7 +271,7 @@ app.post("/api/contact", async (req, res) => {
             (name, email, message)
             VALUES (?, ?, ?)
             `,
-            [name, email, message]
+            [cleanName, cleanEmail, cleanMessage]
         );
 
         res.json({
@@ -201,7 +295,10 @@ app.post("/api/contact", async (req, res) => {
 app.post("/api/login", loginLimiter, async (req, res) => {
     const { password } = req.body;
 
-    if (!password) {
+    if (
+        typeof password !== "string" ||
+        password.length === 0
+    ) {
         return res.status(400).json({
             success: false,
             message: "Password is required.",
@@ -209,12 +306,24 @@ app.post("/api/login", loginLimiter, async (req, res) => {
     }
 
     try {
-        /*
-         * ADMIN_PASSWORD is the password stored
-         * in your Render environment variables.
-         */
-        const isValidPassword =
-            password === process.env.ADMIN_PASSWORD;
+        const adminPasswordHash =
+            process.env.ADMIN_PASSWORD_HASH;
+
+        if (!adminPasswordHash) {
+            console.error(
+                "ADMIN_PASSWORD_HASH is not configured."
+            );
+
+            return res.status(500).json({
+                success: false,
+                message: "Admin authentication is not configured.",
+            });
+        }
+
+        const isValidPassword = await bcrypt.compare(
+            password,
+            adminPasswordHash
+        );
 
         if (!isValidPassword) {
             return res.status(401).json({
@@ -252,55 +361,66 @@ app.post("/api/login", loginLimiter, async (req, res) => {
 // Analytics
 // =========================
 
-app.get("/api/analytics", authenticateToken, async (req, res) => {
-    try {
-        const [visitorRows] = await db.execute(
-            `
-            SELECT COUNT(*) AS totalVisitors
-            FROM unique_visitors
-            `
-        );
+app.get(
+    "/api/analytics",
+    authenticateToken,
+    async (req, res) => {
+        try {
+            const [visitorRows] = await db.execute(
+                `
+                SELECT COUNT(*) AS totalVisitors
+                FROM unique_visitors
+                `
+            );
 
-        const [messageRows] = await db.execute(
-            `
-            SELECT COUNT(*) AS totalMessages
-            FROM contact_messages
-            `
-        );
+            const [messageRows] = await db.execute(
+                `
+                SELECT COUNT(*) AS totalMessages
+                FROM contact_messages
+                `
+            );
 
-        const [latestMessages] = await db.execute(
-            `
-            SELECT
-                name,
-                email,
-                message,
-                created_at
-            FROM contact_messages
-            ORDER BY created_at DESC
-            LIMIT 10
-            `
-        );
+            const [latestMessages] = await db.execute(
+                `
+                SELECT
+                    name,
+                    email,
+                    message,
+                    created_at
+                FROM contact_messages
+                ORDER BY created_at DESC
+                LIMIT 10
+                `
+            );
 
-        res.json({
-            success: true,
-            totalVisitors: visitorRows[0].totalVisitors,
-            totalMessages: messageRows[0].totalMessages,
-            latestMessages,
-        });
-    } catch (error) {
-        console.error("Analytics error:", error);
+            res.json({
+                success: true,
+                totalVisitors:
+                    visitorRows[0].totalVisitors,
+                totalMessages:
+                    messageRows[0].totalMessages,
+                latestMessages,
+            });
+        } catch (error) {
+            console.error(
+                "Analytics error:",
+                error
+            );
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to load analytics.",
-        });
+            res.status(500).json({
+                success: false,
+                message: "Failed to load analytics.",
+            });
+        }
     }
-});
+);
 
 // =========================
 // Start Server
 // =========================
 
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(
+        `Server running on port ${PORT}`
+    );
 });
