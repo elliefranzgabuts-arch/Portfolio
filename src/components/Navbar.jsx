@@ -24,7 +24,10 @@ function Navbar({ activeSection, setActiveSection }) {
         };
 
         window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
     }, []);
 
     const navItems = [
@@ -78,17 +81,14 @@ function Navbar({ activeSection, setActiveSection }) {
                     justify-between
                     transition-all
                     duration-500
-                    ${
-                        scrolled
-                            ? "py-3"
-                            : "py-4"
-                    }
+                    ${scrolled ? "py-3" : "py-4"}
                 `}
             >
                 {/* LOGO */}
                 <button
                     type="button"
                     onClick={() => handleNavigation("home")}
+                    aria-label="Go to home"
                     className="
                         text-2xl
                         font-bold
@@ -134,7 +134,6 @@ function Navbar({ activeSection, setActiveSection }) {
                         >
                             {item.label}
 
-                            {/* Active underline */}
                             <span
                                 className={`
                                     absolute
@@ -144,9 +143,6 @@ function Navbar({ activeSection, setActiveSection }) {
                                     bg-red-500
                                     transition-all
                                     duration-300
-                                    focus-visible:outline-none
-                                    focus-visible:bg-white/5
-                                    focus-visible:text-red-500
                                     ${
                                         activeSection === item.id
                                             ? "w-full"
@@ -209,11 +205,7 @@ function Navbar({ activeSection, setActiveSection }) {
                             bg-current
                             transition-all
                             duration-300
-                            ${
-                                menuOpen
-                                    ? "opacity-0"
-                                    : "opacity-100"
-                            }
+                            ${menuOpen ? "opacity-0" : "opacity-100"}
                         `}
                     />
 
@@ -237,8 +229,8 @@ function Navbar({ activeSection, setActiveSection }) {
 
             {/* MOBILE MENU */}
             <div
+                id="mobile-menu"
                 className={`
-                    id="mobile-menu"
                     md:hidden
                     overflow-hidden
                     transition-all

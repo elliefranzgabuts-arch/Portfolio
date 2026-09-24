@@ -14,13 +14,16 @@ function Contact(props) {
         e.preventDefault();
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            });
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/contact`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(formData),
+                }
+            );
 
             const data = await response.json();
 
@@ -68,7 +71,6 @@ function Contact(props) {
             className="bg-black text-white px-6 md:px-10 py-28 scroll-mt-24 overflow-hidden"
         >
             <div className="max-w-6xl mx-auto">
-
                 {/* SECTION LABEL */}
                 <div
                     className={`
@@ -94,7 +96,6 @@ function Contact(props) {
 
                 {/* MAIN CONTENT */}
                 <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-16 lg:gap-24">
-
                     {/* LEFT */}
                     <div
                         className={`
@@ -182,7 +183,6 @@ function Contact(props) {
                         </p>
 
                         <div className="border-t border-[#242424]">
-
                             {/* EMAIL */}
                             <a
                                 href={`mailto:${props.email}`}
@@ -257,7 +257,6 @@ function Contact(props) {
                                     Iloilo City, Philippines
                                 </p>
                             </div>
-
                         </div>
 
                         {/* CONTACT FORM */}
@@ -266,7 +265,10 @@ function Contact(props) {
                                 Send a message
                             </p>
 
-                            <form onSubmit={handleSubmit} className="space-y-5">
+                            <form
+                                onSubmit={handleSubmit}
+                                className="space-y-5"
+                            >
                                 <input
                                     type="text"
                                     name="name"
@@ -320,13 +322,11 @@ function Contact(props) {
 
                         {/* SOCIALS */}
                         <div className="mt-10">
-
                             <p className="text-xs text-gray-600 uppercase tracking-[0.2em] mb-5">
                                 Find me online
                             </p>
 
                             <div className="flex flex-wrap items-center gap-6">
-
                                 {/* FACEBOOK */}
                                 <a
                                     href="https://www.facebook.com/share/1DKUnE2q3L/"
@@ -344,9 +344,7 @@ function Contact(props) {
                                     Facebook
                                 </a>
 
-                                <span className="text-[#333]">
-                                    /
-                                </span>
+                                <span className="text-[#333]">/</span>
 
                                 {/* GITHUB */}
                                 <a
@@ -365,9 +363,7 @@ function Contact(props) {
                                     GitHub
                                 </a>
 
-                                <span className="text-[#333]">
-                                    /
-                                </span>
+                                <span className="text-[#333]">/</span>
 
                                 {/* LINKEDIN */}
                                 <a
@@ -385,48 +381,10 @@ function Contact(props) {
                                 >
                                     LinkedIn
                                 </a>
-
                             </div>
-
                         </div>
                     </div>
-
                 </div>
-
-                {/* BOTTOM */}
-                <div
-                    className={`
-                        mt-24
-                        pt-6
-                        border-t
-                        border-[#242424]
-                        flex
-                        flex-col
-                        md:flex-row
-                        md:items-center
-                        md:justify-between
-                        gap-4
-                        transition-all
-                        duration-700
-                        ${
-                            isVisible
-                                ? "opacity-100 translate-y-0"
-                                : "opacity-0 translate-y-8"
-                        }
-                    `}
-                    style={{
-                        transitionDelay: "500ms",
-                    }}
-                >
-                    <p className="text-sm text-gray-600">
-                        Ellie Franz Gabutin
-                    </p>
-
-                    <p className="text-sm text-gray-600">
-                        Still learning. Still building.
-                    </p>
-                </div>
-
             </div>
         </section>
     );

@@ -22,7 +22,9 @@ function Footer() {
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.message || "Visitor request failed");
+                    throw new Error(
+                        data.message || "Visitor request failed"
+                    );
                 }
 
                 return data;
@@ -37,48 +39,94 @@ function Footer() {
             });
     }, []);
 
+    const footerLinks = [
+        "Home",
+        "About",
+        "Skills",
+        "Projects",
+        "Journey",
+        "Certificates",
+        "Contact",
+    ];
+
     return (
-        <footer className="border-t border-white/10 bg-black px-6 py-5">
-            <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-center text-sm text-gray-500 sm:flex-row sm:text-left">
+        <footer className="border-t border-[#181818] bg-black px-6 md:px-10 py-8">
+            <div className="max-w-6xl mx-auto">
 
-                <a
-                    href="#home"
-                    className="font-semibold text-white transition-colors hover:text-red-500"
-                >
-                    EF.
-                </a>
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
 
-                <nav
-                    aria-label="Footer navigation"
-                    className="flex flex-wrap justify-center gap-x-4 gap-y-2"
-                >
-                    {[
-                        "Home",
-                        "About",
-                        "Skills",
-                        "Projects",
-                        "Journey",
-                        "Certificates",
-                        "Contact",
-                    ].map((item) => (
-                        <a
-                            key={item}
-                            href={`#${item.toLowerCase()}`}
-                            className="transition-colors hover:text-white"
-                        >
-                            {item}
-                        </a>
-                    ))}
-                </nav>
+                    {/* Logo */}
+                    <a
+                        href="#home"
+                        aria-label="Back to home"
+                        className="
+                            self-center
+                            lg:self-auto
+                            text-2xl
+                            font-bold
+                            tracking-tight
+                            text-white
+                            transition-colors
+                            duration-300
+                            hover:text-red-500
+                        "
+                    >
+                        EF<span className="text-red-500">.</span>
+                    </a>
 
-                <div className="flex flex-col items-center gap-1 sm:items-end">
-                    <p>© 2026 Ellie Franz M. Gabutin</p>
+                    {/* Navigation */}
+                    <nav
+                        aria-label="Footer navigation"
+                        className="
+                            flex
+                            flex-wrap
+                            justify-center
+                            gap-x-5
+                            gap-y-3
+                            text-xs
+                            uppercase
+                            tracking-[0.12em]
+                            text-gray-600
+                        "
+                    >
+                        {footerLinks.map((item) => (
+                            <a
+                                key={item}
+                                href={`#${item.toLowerCase()}`}
+                                className="
+                                    transition-colors
+                                    duration-300
+                                    hover:text-white
+                                "
+                            >
+                                {item}
+                            </a>
+                        ))}
+                    </nav>
 
-                    <p className="text-xs text-gray-600">
-                        Visitors:{" "}
-                        {visitorCount !== null
-                            ? visitorCount
-                            : "Loading..."}
+                    {/* Copyright + Visitors */}
+                    <div className="text-center lg:text-right">
+                        <p className="text-xs text-gray-600">
+                            © 2026 Ellie Franz M. Gabutin
+                        </p>
+
+                        <p className="mt-1 text-[11px] text-gray-700">
+                            Visitors:{" "}
+                            {visitorCount !== null
+                                ? visitorCount
+                                : "Loading..."}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Bottom line */}
+                <div className="mt-8 pt-5 border-t border-[#111] flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-gray-700">
+                        Still learning. Still building.
+                    </p>
+
+                    <p className="text-[11px] text-gray-700">
+                        Built with React
                     </p>
                 </div>
 

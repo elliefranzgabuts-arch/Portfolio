@@ -22,9 +22,7 @@ function Home() {
             observer.observe(homeRef.current);
         }
 
-        return () => {
-            observer.disconnect();
-        };
+        return () => observer.disconnect();
     }, []);
 
     return (
@@ -32,6 +30,7 @@ function Home() {
             ref={homeRef}
             id="home"
             className="
+                relative
                 min-h-screen
                 scroll-mt-24
                 bg-black
@@ -39,39 +38,56 @@ function Home() {
                 px-6
                 md:px-10
                 pt-28
-                pb-20
+                pb-16
                 flex
                 items-center
                 overflow-hidden
             "
         >
-            <div className="max-w-6xl mx-auto w-full">
+            {/* Subtle background accent */}
+            <div
+                className="
+                    absolute
+                    top-0
+                    right-0
+                    w-[35vw]
+                    h-[35vw]
+                    max-w-[500px]
+                    max-h-[500px]
+                    rounded-full
+                    bg-red-500/[0.025]
+                    blur-3xl
+                    pointer-events-none
+                "
+            ></div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center">
+            <div className="relative max-w-7xl mx-auto w-full">
+
+                <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-14 lg:gap-20 items-center">
 
                     {/* LEFT SIDE */}
                     <div>
 
-                        {/* Section Label */}
+                        {/* Intro Label */}
                         <div
                             className={`
                                 flex
                                 items-center
                                 gap-4
-                                mb-8
+                                mb-7
                                 transition-all
                                 duration-700
                                 ease-out
                                 ${
                                     isVisible
-                                        ? "opacity-100 translate-x-0"
-                                        : "opacity-0 -translate-x-8"
+                                        ? "opacity-100 translate-y-0"
+                                        : "opacity-0 translate-y-4"
                                 }
                             `}
                         >
                             <span className="w-10 h-px bg-red-500"></span>
 
-                            <p className="text-sm tracking-[0.3em] text-gray-500 uppercase">
+                            <p className="text-xs md:text-sm tracking-[0.28em] text-gray-500 uppercase">
                                 BSIT Student / Developer
                             </p>
                         </div>
@@ -79,16 +95,16 @@ function Home() {
                         {/* Name */}
                         <h1
                             className={`
-                                text-6xl
-                                md:text-7xl
-                                lg:text-8xl
+                                text-[4.5rem]
+                                sm:text-7xl
+                                md:text-8xl
+                                lg:text-[7.5rem]
                                 font-bold
-                                leading-[0.9]
-                                tracking-tight
+                                leading-[0.82]
+                                tracking-[-0.055em]
                                 transition-all
                                 duration-1000
                                 ease-out
-                                delay-100
                                 ${
                                     isVisible
                                         ? "opacity-100 translate-y-0"
@@ -99,21 +115,21 @@ function Home() {
                             Ellie
                             <br />
 
-                            <span className="text-gray-500">
+                            <span className="text-[#555]">
                                 Franz
                                 <span className="text-red-500">.</span>
                             </span>
                         </h1>
 
-                        {/* Introduction */}
+                        {/* Description */}
                         <p
                             className={`
-                                text-gray-400
-                                text-lg
-                                md:text-xl
-                                leading-relaxed
                                 max-w-xl
-                                mt-10
+                                text-gray-400
+                                text-base
+                                md:text-lg
+                                leading-relaxed
+                                mt-9
                                 transition-all
                                 duration-700
                                 ease-out
@@ -121,7 +137,7 @@ function Home() {
                                 ${
                                     isVisible
                                         ? "opacity-100 translate-y-0"
-                                        : "opacity-0 translate-y-6"
+                                        : "opacity-0 translate-y-5"
                                 }
                             `}
                         >
@@ -132,12 +148,12 @@ function Home() {
                         </p>
 
                         {/* Tagline */}
-                        <p
+                        <div
                             className={`
-                                text-gray-600
-                                mt-5
-                                text-sm
-                                tracking-wide
+                                flex
+                                items-center
+                                gap-3
+                                mt-6
                                 transition-all
                                 duration-700
                                 ease-out
@@ -145,33 +161,36 @@ function Home() {
                                 ${
                                     isVisible
                                         ? "opacity-100 translate-y-0"
-                                        : "opacity-0 translate-y-5"
+                                        : "opacity-0 translate-y-4"
                                 }
                             `}
                         >
-                            Still learning. Still building.
-                        </p>
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
 
-                        {/* BUTTONS */}
+                            <p className="text-sm text-gray-600 tracking-wide">
+                                Still learning. Still building.
+                            </p>
+                        </div>
+
+                        {/* CTA */}
                         <div
                             className={`
                                 flex
                                 flex-wrap
                                 items-center
-                                gap-8
+                                gap-7
                                 mt-10
                                 transition-all
                                 duration-700
                                 ease-out
-                                delay-[400ms]
+                                delay-400
                                 ${
                                     isVisible
                                         ? "opacity-100 translate-y-0"
-                                        : "opacity-0 translate-y-6"
+                                        : "opacity-0 translate-y-5"
                                 }
                             `}
                         >
-
                             {/* View Projects */}
                             <a
                                 href="#projects"
@@ -181,113 +200,69 @@ function Home() {
                                     items-center
                                     gap-3
                                     text-white
+                                    text-sm
+                                    md:text-base
                                     font-semibold
+                                    transition-colors
+                                    duration-300
+                                    hover:text-red-400
                                 "
                             >
-                                <span className="relative pb-1">
-                                    <span
-                                        className="
-                                            transition-colors
-                                            duration-300
-                                            group-hover:text-red-500
-                                        "
-                                    >
-                                        View Projects
-                                    </span>
-
-                                    <span
-                                        className="
-                                            absolute
-                                            left-0
-                                            bottom-0
-                                            h-px
-                                            w-full
-                                            bg-red-500
-                                            origin-left
-                                            transition-transform
-                                            duration-500
-                                            ease-out
-                                            group-hover:scale-x-0
-                                        "
-                                    />
-                                </span>
+                                <span>View Projects</span>
 
                                 <span
                                     className="
                                         text-red-500
-                                        text-xl
-                                        transition-all
-                                        duration-500
-                                        ease-out
+                                        text-lg
+                                        transition-transform
+                                        duration-300
                                         group-hover:translate-x-2
-                                        group-hover:text-white
                                     "
                                 >
                                     →
                                 </span>
                             </a>
 
-                            {/* Contact Me */}
+                            {/* Contact */}
                             <a
                                 href="#contact"
                                 className="
                                     group
+                                    relative
                                     inline-flex
                                     items-center
-                                    gap-3
+                                    px-5
+                                    py-2.5
+                                    border
+                                    border-[#292929]
                                     text-gray-400
+                                    text-sm
+                                    md:text-base
                                     font-semibold
-                                    transition-colors
+                                    transition-all
                                     duration-300
+                                    hover:border-red-500/60
                                     hover:text-white
+                                    hover:bg-red-500/[0.04]
                                 "
                             >
-                                <span className="relative pb-1">
-                                    <span
-                                        className="
-                                            transition-colors
-                                            duration-300
-                                            group-hover:text-red-500
-                                        "
-                                    >
-                                        Contact Me
-                                    </span>
-
-                                    <span
-                                        className="
-                                            absolute
-                                            left-0
-                                            bottom-0
-                                            h-px
-                                            w-full
-                                            bg-red-500
-                                            origin-left
-                                            scale-x-0
-                                            transition-transform
-                                            duration-500
-                                            ease-out
-                                            group-hover:scale-x-100
-                                        "
-                                    />
-                                </span>
+                                Contact Me
 
                                 <span
                                     className="
-                                        text-gray-600
-                                        text-xl
+                                        absolute
+                                        -bottom-px
+                                        left-0
+                                        h-px
+                                        w-0
+                                        bg-red-500
                                         transition-all
-                                        duration-500
-                                        ease-out
-                                        group-hover:translate-x-2
-                                        group-hover:text-red-500
+                                        duration-300
+                                        group-hover:w-full
                                     "
-                                >
-                                    →
-                                </span>
+                                ></span>
                             </a>
-
                         </div>
-
                     </div>
 
                     {/* RIGHT SIDE */}
@@ -300,77 +275,53 @@ function Home() {
                             transition-all
                             duration-1000
                             ease-out
-                            delay-300
+                            delay-200
                             ${
                                 isVisible
-                                    ? "opacity-100 translate-x-0 scale-100"
-                                    : "opacity-0 translate-x-12 scale-95"
+                                    ? "opacity-100 translate-x-0"
+                                    : "opacity-0 translate-x-10"
                             }
                         `}
                     >
+                        {/* Photo */}
+                        <div className="relative w-72 h-[25rem] md:w-80 md:h-[30rem] lg:w-[22rem] lg:h-[32rem]">
 
-                        {/* Decorative Number */}
-                        <span
-                            className={`
-                                absolute
-                                -top-10
-                                -right-2
-                                md:right-4
-                                text-[8rem]
-                                md:text-[11rem]
-                                font-bold
-                                text-gray-900
-                                select-none
-                                pointer-events-none
-                                transition-all
-                                duration-1000
-                                ease-out
-                                delay-500
-                                ${
-                                    isVisible
-                                        ? "opacity-100 translate-y-0"
-                                        : "opacity-0 translate-y-6"
-                                }
-                            `}
-                        >
-                            01
-                        </span>
-
-                        {/* Photo Frame */}
-                        <div
-                            className="
-                                relative
-                                w-72
-                                h-96
-                                md:w-80
-                                md:h-[28rem]
-                                border
-                                border-gray-800
-                                rounded-2xl
-                                p-3
-                                bg-gray-950
-                                transition-all
-                                duration-500
-                                hover:-translate-y-2
-                                hover:border-red-500/60
-                                hover:shadow-[0_0_30px_rgba(239,68,68,0.12)]
-                            "
-                        >
+                            {/* Back Frame */}
                             <div
                                 className="
+                                    absolute
+                                    inset-0
+                                    border
+                                    border-[#252525]
+                                    translate-x-4
+                                    translate-y-4
+                                    transition-all
+                                    duration-500
+                                    group-hover:translate-x-6
+                                    group-hover:translate-y-6
+                                "
+                            ></div>
+
+                            {/* Image Frame */}
+                            <div
+                                className="
+                                    group
                                     relative
                                     w-full
                                     h-full
-                                    rounded-xl
                                     overflow-hidden
-                                    bg-black
+                                    bg-[#080808]
+                                    border
+                                    border-[#292929]
+                                    transition-all
+                                    duration-500
+                                    hover:border-red-500/50
+                                    hover:-translate-y-1
                                 "
                             >
-
-                                {/* Profile Image */}
                                 <img
                                     src={aboutMe}
-                                    alt="Ellie"
+                                    alt="Ellie Franz"
                                     className="
                                         w-full
                                         h-full
@@ -378,66 +329,73 @@ function Home() {
                                         transition-transform
                                         duration-700
                                         ease-out
-                                        hover:scale-105
+                                        group-hover:scale-[1.035]
                                     "
                                 />
 
-                                {/* Bottom Label */}
+                                {/* Image Gradient */}
+                                <div
+                                    className="
+                                        absolute
+                                        inset-0
+                                        bg-gradient-to-t
+                                        from-black/75
+                                        via-transparent
+                                        to-transparent
+                                        opacity-80
+                                        transition-opacity
+                                        duration-500
+                                        group-hover:opacity-60
+                                    "
+                                ></div>
+
+                                {/* Bottom Information */}
                                 <div
                                     className="
                                         absolute
                                         bottom-0
                                         left-0
                                         right-0
-                                        bg-black/80
-                                        backdrop-blur-sm
-                                        border-t
-                                        border-gray-800
                                         px-5
-                                        py-4
+                                        py-5
+                                        border-t
+                                        border-white/10
+                                        bg-black/60
+                                        backdrop-blur-sm
                                     "
                                 >
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-[10px] uppercase tracking-[0.25em] text-gray-500">
                                         Currently
                                     </p>
 
-                                    <p className="text-white font-medium mt-1">
+                                    <p className="mt-1 text-sm font-medium text-white">
                                         Learning & Building
                                     </p>
                                 </div>
 
+                                {/* Red Corner */}
+                                <div
+                                    className="
+                                        absolute
+                                        top-0
+                                        right-0
+                                        w-12
+                                        h-12
+                                        border-t
+                                        border-r
+                                        border-red-500
+                                        transition-all
+                                        duration-500
+                                        group-hover:w-16
+                                        group-hover:h-16
+                                    "
+                                ></div>
                             </div>
                         </div>
-
-                        {/* Red Accent */}
-                        <div
-                            className={`
-                                absolute
-                                -bottom-5
-                                -left-2
-                                md:left-6
-                                w-20
-                                h-20
-                                border-l
-                                border-b
-                                border-red-500
-                                transition-all
-                                duration-1000
-                                ease-out
-                                delay-700
-                                ${
-                                    isVisible
-                                        ? "opacity-100 translate-y-0"
-                                        : "opacity-0 translate-y-5"
-                                }
-                            `}
-                        />
-
                     </div>
-
                 </div>
 
-                {/* Bottom Indicator */}
+                {/* Scroll Indicator */}
                 <div
                     className={`
                         hidden
@@ -445,28 +403,28 @@ function Home() {
                         items-center
                         gap-4
                         mt-20
-                        text-gray-600
+                        text-gray-700
                         transition-all
-                        duration-1000
+                        duration-700
                         ease-out
-                        delay-[900ms]
+                        delay-700
                         ${
                             isVisible
                                 ? "opacity-100 translate-y-0"
-                                : "opacity-0 translate-y-5"
+                                : "opacity-0 translate-y-4"
                         }
                     `}
                 >
-                    <span className="w-8 h-px bg-gray-800"></span>
+                    <span className="w-8 h-px bg-[#252525]"></span>
 
-                    <span className="text-xs tracking-[0.25em] uppercase">
+                    <span className="text-[10px] tracking-[0.3em] uppercase">
                         Scroll to explore
                     </span>
                 </div>
-
             </div>
         </section>
     );
 }
 
-export default Home;    
+export default Home;
+

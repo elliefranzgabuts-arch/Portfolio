@@ -11,8 +11,8 @@ function Projects() {
 
     const personalProjects = [
         {
-            number: "01",
-            type: "Personal Project · In Progress",
+            type: "Personal Project",
+            status: "In Progress",
             title: "Our Little World",
             description:
                 "A personal website I built for my girlfriend while learning web development. It was designed as a place where we can keep our memories, bucket list, and other moments in one place. The project is still in progress as I continue improving it.",
@@ -32,13 +32,13 @@ function Projects() {
 
     const teamProjects = [
         {
-            number: "01",
-            type: "Team Project · UI/UX Contributor",
+            type: "Team Project",
+            status: "UI/UX Contributor",
             title: "JD&S Services",
             description:
                 "A team project focused on a food delivery and services website for local restaurants in Iloilo. I contributed to the project by designing the user interface and overall visual direction in Figma, helping the team plan the website's layout and user experience.",
             contribution:
-                "My contribution focused on UI/UX design and the visual direction of the project using Figma.",
+                "UI/UX design and visual direction using Figma.",
             technologies: [
                 "Figma",
                 "HTML",
@@ -46,17 +46,16 @@ function Projects() {
                 "JavaScript",
             ],
             image: jdServices,
-            github:
-                "https://github.com/alexgustilo/Jangle-Delivery-and-Services---Frontend",
+            github: "",
         },
         {
-            number: "02",
-            type: "Team Project · System Flow Contributor",
+            type: "Team Project",
+            status: "System Flow Contributor",
             title: "CampusConnect",
             description:
                 "A team project focused on an appointment scheduling system for campus activities and services. My contribution focused on creating the flowchart and helping visualize the process and flow of the system before development.",
             contribution:
-                "My contribution focused on creating the system flowchart and visualizing the process before development.",
+                "System flowchart and process visualization.",
             technologies: [
                 "Flowchart",
                 "HTML",
@@ -67,13 +66,13 @@ function Projects() {
             github: "",
         },
         {
-            number: "03",
-            type: "Team Project · Arduino / Queue Management System",
+            type: "Team Project",
+            status: "Arduino / Queue System",
             title: "Q-Track",
             description:
-                "An Arduino-powered queue management system designed to make teller transactions more convenient and organized. The system uses student identification to track queue numbers and allows students to move around while waiting. Once their number is ready to be served, the system can notify them through their phone, reducing the need to stay near the teller area.",
+                "An Arduino-powered queue management system designed to make teller transactions more convenient and organized. The system uses student identification to track queue numbers and allows students to move around while waiting. Once their number is ready to be served, the system can notify them through their phone.",
             contribution:
-                "My contribution focused on the Arduino programming, particularly helping implement the code that controlled the LED/light indicator based on the system's sensor input.",
+                "Arduino programming and LED/light indicator implementation.",
             technologies: [
                 "Arduino",
                 "RFID",
@@ -96,7 +95,7 @@ function Projects() {
                 }
             },
             {
-                threshold: 0.15,
+                threshold: 0.12,
             }
         );
 
@@ -104,12 +103,14 @@ function Projects() {
             observer.observe(projectsRef.current);
         }
 
-        return () => {
-            observer.disconnect();
-        };
+        return () => observer.disconnect();
     }, []);
 
-    const ProjectShowcase = ({ project, delay = 200 }) => {
+    const ProjectShowcase = ({
+        project,
+        delay = 0,
+        featured = false,
+    }) => {
         return (
             <article
                 className={`
@@ -119,119 +120,217 @@ function Projects() {
                     ${
                         isVisible
                             ? "opacity-100 translate-y-0"
-                            : "opacity-0 translate-y-12"
+                            : "opacity-0 translate-y-10"
                     }
                 `}
                 style={{
                     transitionDelay: `${delay}ms`,
                 }}
             >
-                {/* PROJECT NUMBER + TYPE */}
-                <div className="flex items-center gap-4 mb-6">
-                    <span className="text-red-500 text-sm font-semibold tracking-[0.2em]">
-                        {project.number}
-                    </span>
-
-                    <span className="w-8 h-px bg-[#333]"></span>
-
-                    <p className="text-gray-500 text-xs font-semibold tracking-[0.2em] uppercase">
-                        {project.type}
-                    </p>
-                </div>
-
-                {/* PROJECT CONTENT */}
-                <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-8 lg:gap-14 items-center">
-
-                    {/* PROJECT IMAGE */}
+                <div
+                    className={`
+                        grid
+                        grid-cols-1
+                        ${
+                            featured
+                                ? "lg:grid-cols-[1.15fr_0.85fr]"
+                                : "lg:grid-cols-[1fr_1fr]"
+                        }
+                        gap-10
+                        lg:gap-16
+                        items-center
+                    `}
+                >
+                    {/* IMAGE */}
                     <div
-                        className={`
+                        className="
                             relative
                             overflow-hidden
                             bg-[#080808]
+                            border
+                            border-[#222]
                             transition-all
-                            duration-700
-                            ${
-                                isVisible
-                                    ? "opacity-100 translate-x-0"
-                                    : "opacity-0 -translate-x-8"
-                            }
-                        `}
-                        style={{
-                            transitionDelay: `${delay + 100}ms`,
-                        }}
+                            duration-500
+                            group-hover:border-[#444]
+                            group-hover:shadow-[0_20px_60px_rgba(0,0,0,0.45)]
+                        "
                     >
-                        <img
-                            src={project.image}
-                            alt={`${project.title} website or system preview`}
+                        {/* Top browser-style bar */}
+                        <div
                             className="
-                                block
-                                w-full
-                                h-[280px]
-                                md:h-[420px]
-                                object-cover
-                                object-top
-                                transition-transform
-                                duration-700
-                                group-hover:scale-[1.03]
+                                flex
+                                items-center
+                                justify-between
+                                px-4
+                                py-3
+                                bg-[#0a0a0a]
+                                border-b
+                                border-[#222]
                             "
-                        />
+                        >
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#444]"></span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#444]"></span>
+                            </div>
+
+                            <span className="text-[9px] uppercase tracking-[0.25em] text-[#444]">
+                                Project Preview
+                            </span>
+                        </div>
+
+                        <div className="relative overflow-hidden">
+                            <img
+                                src={project.image}
+                                alt={`${project.title} project preview`}
+                                className={`
+                                    block
+                                    w-full
+                                    ${
+                                        featured
+                                            ? "h-[300px] md:h-[440px]"
+                                            : "h-[280px] md:h-[380px]"
+                                    }
+                                    object-cover
+                                    object-top
+                                    transition-transform
+                                    duration-700
+                                    group-hover:scale-[1.035]
+                                `}
+                            />
+
+                            {/* Overlay */}
+                            <div
+                                className="
+                                    absolute
+                                    inset-0
+                                    bg-gradient-to-t
+                                    from-black/60
+                                    via-transparent
+                                    to-transparent
+                                    opacity-70
+                                    transition-opacity
+                                    duration-500
+                                    group-hover:opacity-40
+                                "
+                            ></div>
+
+                            {/* Bottom red line */}
+                            <div
+                                className="
+                                    absolute
+                                    bottom-0
+                                    left-0
+                                    h-[2px]
+                                    w-0
+                                    bg-red-500
+                                    transition-all
+                                    duration-700
+                                    group-hover:w-full
+                                "
+                            ></div>
+                        </div>
                     </div>
 
-                    {/* PROJECT INFORMATION */}
-                    <div
-                        className={`
-                            transition-all
-                            duration-700
-                            ${
-                                isVisible
-                                    ? "opacity-100 translate-x-0"
-                                    : "opacity-0 translate-x-8"
-                            }
-                        `}
-                        style={{
-                            transitionDelay: `${delay + 250}ms`,
-                        }}
-                    >
+                    {/* CONTENT */}
+                    <div className="relative">
+                        {/* META */}
+                        <div className="flex items-center gap-3 mb-5">
+                            <span className="w-8 h-px bg-red-500"></span>
+
+                            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-red-500">
+                                {project.type}
+                            </span>
+
+                            <span className="text-[#333]">/</span>
+
+                            <span className="text-[10px] uppercase tracking-[0.18em] text-gray-600">
+                                {project.status}
+                            </span>
+                        </div>
+
                         {/* TITLE */}
-                        <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                        <h2
+                            className="
+                                text-4xl
+                                md:text-5xl
+                                lg:text-6xl
+                                font-bold
+                                tracking-tight
+                                leading-[0.95]
+                                text-white
+                                transition-transform
+                                duration-500
+                                group-hover:translate-x-1
+                            "
+                        >
                             {project.title}
                             <span className="text-red-500">.</span>
                         </h2>
 
                         {/* DESCRIPTION */}
-                        <p className="text-gray-400 text-base leading-relaxed mt-6">
+                        <p
+                            className="
+                                mt-6
+                                text-gray-400
+                                text-sm
+                                md:text-base
+                                leading-relaxed
+                                max-w-xl
+                                transition-colors
+                                duration-300
+                                group-hover:text-gray-300
+                            "
+                        >
                             {project.description}
                         </p>
 
-                        {/* MY CONTRIBUTION */}
+                        {/* CONTRIBUTION */}
                         {project.contribution && (
-                            <div className="mt-7 border-l border-red-500 pl-4">
-                                <p className="text-[#555] text-xs font-semibold tracking-[0.2em] uppercase mb-2">
+                            <div
+                                className="
+                                    mt-7
+                                    pl-4
+                                    border-l
+                                    border-[#333]
+                                    transition-all
+                                    duration-500
+                                    group-hover:border-red-500
+                                "
+                            >
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-600 mb-2">
                                     My Contribution
                                 </p>
 
-                                <p className="text-gray-400 text-sm leading-relaxed">
+                                <p className="text-sm text-gray-400 leading-relaxed">
                                     {project.contribution}
                                 </p>
                             </div>
                         )}
 
                         {/* TECHNOLOGIES */}
-                        <div className="mt-7">
-                            <p className="text-[#555] text-xs font-semibold tracking-[0.2em] uppercase mb-4">
+                        <div className="mt-8">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-600 mb-3">
                                 Technologies
                             </p>
 
-                            <div className="flex flex-wrap gap-x-5 gap-y-2">
+                            <div className="flex flex-wrap gap-2">
                                 {project.technologies.map((technology) => (
                                     <span
                                         key={technology}
                                         className="
-                                            text-sm
+                                            px-3
+                                            py-1.5
+                                            border
+                                            border-[#252525]
+                                            bg-[#080808]
+                                            text-[11px]
                                             text-gray-400
-                                            transition-colors
+                                            transition-all
                                             duration-300
-                                            hover:text-red-500
+                                            hover:border-red-500/60
+                                            hover:text-white
+                                            hover:bg-red-500/5
                                         "
                                     >
                                         {technology}
@@ -248,22 +347,32 @@ function Projects() {
                                     target="_blank"
                                     rel="noreferrer"
                                     className="
+                                        group/link
                                         inline-flex
                                         items-center
-                                        gap-3
-                                        text-white
+                                        gap-4
+                                        text-sm
                                         font-semibold
-                                        group/link
+                                        text-white
                                     "
                                 >
-                                    <span className="border-b border-red-500 pb-1">
+                                    <span
+                                        className="
+                                            border-b
+                                            border-red-500
+                                            pb-1
+                                            transition-colors
+                                            duration-300
+                                            group-hover/link:text-red-400
+                                        "
+                                    >
                                         View on GitHub
                                     </span>
 
                                     <span
                                         className="
                                             text-red-500
-                                            text-xl
+                                            text-lg
                                             transition-transform
                                             duration-300
                                             group-hover/link:translate-x-2
@@ -284,134 +393,31 @@ function Projects() {
         <section
             ref={projectsRef}
             id="projects"
-            className="bg-black text-white px-6 md:px-10 py-28 scroll-mt-24"
+            className="
+                relative
+                overflow-hidden
+                bg-black
+                text-white
+                px-6
+                md:px-10
+                py-28
+                md:py-32
+                scroll-mt-24
+            "
         >
-            <div className="max-w-6xl mx-auto">
+            {/* Subtle background details */}
+            <div className="absolute top-0 left-0 w-full h-px bg-[#171717]"></div>
+
+            <div className="absolute top-24 right-0 w-32 h-px bg-red-500/20"></div>
+
+            <div className="absolute bottom-32 left-0 w-24 h-px bg-red-500/10"></div>
+
+            <div className="relative max-w-7xl mx-auto">
 
                 {/* HEADER */}
                 <div
                     className={`
-                        mb-20
-                        transition-all
-                        duration-700
-                        ${
-                            isVisible
-                                ? "opacity-100 translate-y-0"
-                                : "opacity-0 translate-y-10"
-                        }
-                    `}
-                >
-                    <div className="flex items-center gap-4 mb-6">
-                        <span className="w-10 h-px bg-red-500"></span>
-
-                        <p className="text-sm font-semibold tracking-[0.3em] text-red-500 uppercase">
-                            Projects
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
-                        <h1 className="text-6xl md:text-8xl font-bold leading-[0.85] tracking-tight">
-                            Things
-                            <br />
-                            <span className="text-[#777]">
-                                I've Built
-                                <span className="text-red-500">.</span>
-                            </span>
-                        </h1>
-
-                        <p className="text-gray-400 text-lg leading-relaxed max-w-lg lg:ml-auto">
-                            A collection of personal and team projects where
-                            I've been able to apply what I've learned and
-                            contribute to something real.
-                        </p>
-                    </div>
-                </div>
-
-                {/* PERSONAL PROJECTS */}
-                <div>
-                    <div
-                        className={`
-                            flex
-                            items-center
-                            gap-4
-                            mb-10
-                            transition-all
-                            duration-700
-                            ${
-                                isVisible
-                                    ? "opacity-100 translate-x-0"
-                                    : "opacity-0 -translate-x-8"
-                            }
-                        `}
-                    >
-                        <span className="text-red-500 text-sm font-semibold tracking-[0.2em]">
-                            01
-                        </span>
-
-                        <h2 className="text-xl md:text-2xl font-bold">
-                            Personal Projects
-                        </h2>
-
-                        <span className="h-px bg-[#242424] flex-1"></span>
-                    </div>
-
-                    <div className="space-y-20">
-                        {personalProjects.map((project) => (
-                            <ProjectShowcase
-                                key={project.title}
-                                project={project}
-                                delay={200}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                {/* TEAM PROJECTS */}
-                <div className="mt-28">
-                    <div
-                        className={`
-                            flex
-                            items-center
-                            gap-4
-                            mb-10
-                            transition-all
-                            duration-700
-                            ${
-                                isVisible
-                                    ? "opacity-100 translate-x-0"
-                                    : "opacity-0 -translate-x-8"
-                            }
-                        `}
-                    >
-                        <span className="text-red-500 text-sm font-semibold tracking-[0.2em]">
-                            02
-                        </span>
-
-                        <h2 className="text-xl md:text-2xl font-bold">
-                            Team Projects
-                        </h2>
-
-                        <span className="h-px bg-[#242424] flex-1"></span>
-                    </div>
-
-                    <div className="space-y-24">
-                        {teamProjects.map((project, index) => (
-                            <ProjectShowcase
-                                key={project.title}
-                                project={project}
-                                delay={500 + index * 200}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                {/* BOTTOM MESSAGE */}
-                <div
-                    className={`
-                        mt-16
-                        flex
-                        items-center
-                        gap-4
+                        mb-24
                         transition-all
                         duration-700
                         ${
@@ -420,18 +426,123 @@ function Projects() {
                                 : "opacity-0 translate-y-8"
                         }
                     `}
-                    style={{
-                        transitionDelay: "1100ms",
-                    }}
                 >
-                    <span className="w-8 h-px bg-red-500"></span>
+                    <div className="flex items-center gap-4 mb-7">
+                        <span className="w-10 h-px bg-red-500"></span>
 
+                        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-red-500">
+                            Projects
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 items-end">
+                        <h1
+                            className="
+                                text-6xl
+                                md:text-8xl
+                                lg:text-9xl
+                                font-bold
+                                leading-[0.82]
+                                tracking-[-0.05em]
+                            "
+                        >
+                            Things
+                            <br />
+                            <span className="text-[#555]">
+                                I've Built
+                            </span>
+                            <span className="text-red-500">.</span>
+                        </h1>
+
+                        <p className="text-gray-500 text-base md:text-lg leading-relaxed max-w-md lg:ml-auto">
+                            A collection of personal and team projects where
+                            I've applied what I've learned and contributed to
+                            building something real.
+                        </p>
+                    </div>
+                </div>
+
+                {/* PERSONAL PROJECTS */}
+                <div>
+                    <div
+                        className="
+                            flex
+                            items-center
+                            gap-5
+                            mb-10
+                        "
+                    >
+                        <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-gray-300">
+                            Personal Projects
+                        </h2>
+
+                        <div className="h-px bg-[#222] flex-1"></div>
+                    </div>
+
+                    <div className="space-y-20">
+                        {personalProjects.map((project) => (
+                            <ProjectShowcase
+                                key={project.title}
+                                project={project}
+                                delay={150}
+                                featured
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* TEAM PROJECTS */}
+                <div className="mt-32">
+                    <div
+                        className="
+                            flex
+                            items-center
+                            gap-5
+                            mb-10
+                        "
+                    >
+                        <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-gray-300">
+                            Team Projects
+                        </h2>
+
+                        <div className="h-px bg-[#222] flex-1"></div>
+                    </div>
+
+                    <div className="space-y-24">
+                        {teamProjects.map((project, index) => (
+                            <ProjectShowcase
+                                key={project.title}
+                                project={project}
+                                delay={400 + index * 180}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* FOOTER */}
+                <div
+                    className="
+                        mt-28
+                        pt-8
+                        border-t
+                        border-[#171717]
+                        flex
+                        flex-col
+                        md:flex-row
+                        md:items-center
+                        justify-between
+                        gap-4
+                    "
+                >
                     <p className="text-sm text-gray-600">
                         More projects coming as I continue learning and
                         building.
                     </p>
-                </div>
 
+                    <span className="text-xs uppercase tracking-[0.2em] text-gray-700">
+                        More to come
+                    </span>
+                </div>
             </div>
         </section>
     );

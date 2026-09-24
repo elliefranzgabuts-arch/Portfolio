@@ -6,7 +6,6 @@ function Skills() {
 
     const skillGroups = [
         {
-            number: "01",
             title: "Frontend",
             description:
                 "Technologies I use to build responsive, interactive, and modern web interfaces.",
@@ -19,7 +18,6 @@ function Skills() {
             ],
         },
         {
-            number: "02",
             title: "Backend",
             description:
                 "Technologies I use to build server-side logic, APIs, and application functionality.",
@@ -30,7 +28,6 @@ function Skills() {
             ],
         },
         {
-            number: "03",
             title: "Database",
             description:
                 "Technologies and services I use to store, manage, and connect application data.",
@@ -41,10 +38,9 @@ function Skills() {
             ],
         },
         {
-            number: "04",
             title: "Deployment",
             description:
-                "Platforms and infrastructure I use to deploy and make applications accessible online.",
+                "Platforms and tools I use to deploy projects and manage development workflows.",
             skills: [
                 "Render",
                 "Cloudflare",
@@ -63,7 +59,7 @@ function Skills() {
                 }
             },
             {
-                threshold: 0.2,
+                threshold: 0.15,
             }
         );
 
@@ -71,16 +67,22 @@ function Skills() {
             observer.observe(skillsRef.current);
         }
 
-        return () => {
-            observer.disconnect();
-        };
+        return () => observer.disconnect();
     }, []);
 
     return (
         <section
             ref={skillsRef}
             id="skills"
-            className="bg-black text-white px-6 md:px-10 py-28 scroll-mt-24"
+            className="
+                bg-black
+                text-white
+                px-6
+                md:px-10
+                py-28
+                md:py-32
+                scroll-mt-24
+            "
         >
             <div className="max-w-6xl mx-auto">
 
@@ -93,28 +95,55 @@ function Skills() {
                         ${
                             isVisible
                                 ? "opacity-100 translate-y-0"
-                                : "opacity-0 translate-y-10"
+                                : "opacity-0 translate-y-8"
                         }
                     `}
                 >
-                    <div className="flex items-center gap-4 mb-6">
-                        <span className="w-10 h-px bg-red-500"></span>
+                    <div className="flex items-center gap-4 mb-7">
+                        <span
+                            className="
+                                w-10
+                                h-px
+                                bg-red-500
+                                transition-all
+                                duration-500
+                                hover:w-16
+                            "
+                        ></span>
 
-                        <p className="text-sm font-semibold tracking-[0.3em] text-red-500 uppercase">
+                        <p className="text-xs font-semibold tracking-[0.3em] text-red-500 uppercase">
                             Skills
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
-                        <h1 className="text-6xl md:text-8xl font-bold leading-[0.85] tracking-tight">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-end">
+                        <h1
+                            className="
+                                text-6xl
+                                md:text-8xl
+                                font-bold
+                                leading-[0.85]
+                                tracking-[-0.04em]
+                            "
+                        >
                             What I
                             <br />
                             <span className="text-[#777]">
-                                Work With<span className="text-red-500">.</span>
+                                Work With
+                                <span className="text-red-500">.</span>
                             </span>
                         </h1>
 
-                        <p className="text-gray-400 text-lg leading-relaxed max-w-lg lg:ml-auto">
+                        <p
+                            className="
+                                text-gray-500
+                                text-base
+                                md:text-lg
+                                leading-relaxed
+                                max-w-lg
+                                lg:ml-auto
+                            "
+                        >
                             Technologies, platforms, and tools I use while
                             building and deploying projects as a student
                             developer.
@@ -122,22 +151,26 @@ function Skills() {
                     </div>
                 </div>
 
-                {/* Skill Categories */}
+                {/* Skill Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {skillGroups.map((group, groupIndex) => (
                         <article
-                            key={group.number}
+                            key={group.title}
                             className={`
                                 group
                                 relative
+                                overflow-hidden
                                 bg-[#080808]
                                 border
                                 border-[#242424]
                                 p-7
+                                md:p-8
                                 transition-all
-                                duration-700
-                                hover:-translate-y-1
-                                hover:border-[#444]
+                                duration-500
+                                hover:-translate-y-2
+                                hover:border-[#3a3a3a]
+                                hover:bg-[#0b0b0b]
+                                hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)]
                                 ${
                                     isVisible
                                         ? "opacity-100 translate-y-0"
@@ -145,10 +178,10 @@ function Skills() {
                                 }
                             `}
                             style={{
-                                transitionDelay: `${200 + groupIndex * 150}ms`,
+                                transitionDelay: `${150 + groupIndex * 130}ms`,
                             }}
                         >
-                            {/* Hover Accent */}
+                            {/* Red Top Accent */}
                             <span
                                 className="
                                     absolute
@@ -163,34 +196,73 @@ function Skills() {
                                     transition-transform
                                     duration-500
                                 "
-                            />
+                            ></span>
 
-                            {/* Category Header */}
-                            <div className="flex items-start justify-between mb-10">
-                                <div>
-                                    <p className="text-red-500 text-xs font-semibold tracking-[0.25em] uppercase">
-                                        {group.number}
-                                    </p>
+                            {/* Card Header */}
+                            <div className="mb-8">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <span
+                                        className="
+                                            w-2
+                                            h-2
+                                            rounded-full
+                                            bg-red-500
+                                            transition-all
+                                            duration-300
+                                            group-hover:scale-150
+                                            group-hover:shadow-[0_0_10px_rgba(239,68,68,0.6)]
+                                        "
+                                    ></span>
 
-                                    <h2 className="text-2xl font-bold mt-3">
-                                        {group.title}
-                                        <span className="text-red-500">.</span>
-                                    </h2>
+                                    <span
+                                        className="
+                                            text-[10px]
+                                            uppercase
+                                            tracking-[0.25em]
+                                            text-gray-600
+                                            transition-colors
+                                            duration-300
+                                            group-hover:text-gray-400
+                                        "
+                                    >
+                                        Skill Set
+                                    </span>
                                 </div>
 
-                                <span className="text-[#222] text-5xl font-bold leading-none">
-                                    {group.number}
-                                </span>
+                                <h2
+                                    className="
+                                        text-2xl
+                                        md:text-3xl
+                                        font-bold
+                                        tracking-tight
+                                        transition-transform
+                                        duration-300
+                                        group-hover:translate-x-1
+                                    "
+                                >
+                                    {group.title}
+                                    <span className="text-red-500">.</span>
+                                </h2>
+
+                                <p
+                                    className="
+                                        mt-4
+                                        text-sm
+                                        text-gray-500
+                                        leading-relaxed
+                                        max-w-md
+                                        transition-colors
+                                        duration-300
+                                        group-hover:text-gray-400
+                                    "
+                                >
+                                    {group.description}
+                                </p>
                             </div>
 
-                            {/* Description */}
-                            <p className="text-gray-500 text-sm leading-relaxed pb-7 border-b border-[#242424]">
-                                {group.description}
-                            </p>
-
                             {/* Skills */}
-                            <div className="mt-2">
-                                {group.skills.map((skill, index) => (
+                            <div className="border-t border-[#242424]">
+                                {group.skills.map((skill) => (
                                     <div
                                         key={skill}
                                         className="
@@ -212,21 +284,41 @@ function Skills() {
                                                 className="
                                                     w-1.5
                                                     h-1.5
-                                                    bg-red-500
                                                     rounded-full
-                                                    transition-transform
+                                                    bg-[#444]
+                                                    transition-all
                                                     duration-300
-                                                    group-hover/skill:scale-150
+                                                    group-hover/skill:bg-red-500
+                                                    group-hover/skill:scale-125
+                                                    group-hover/skill:shadow-[0_0_7px_rgba(239,68,68,0.5)]
                                                 "
-                                            />
+                                            ></span>
 
-                                            <span className="text-gray-300 group-hover/skill:text-white transition-colors duration-300">
+                                            <span
+                                                className="
+                                                    text-sm
+                                                    md:text-base
+                                                    text-gray-400
+                                                    transition-colors
+                                                    duration-300
+                                                    group-hover/skill:text-white
+                                                "
+                                            >
                                                 {skill}
                                             </span>
                                         </div>
 
-                                        <span className="text-[#444] text-xs">
-                                            {String(index + 1).padStart(2, "0")}
+                                        <span
+                                            className="
+                                                text-gray-700
+                                                text-sm
+                                                transition-all
+                                                duration-300
+                                                group-hover/skill:text-red-500
+                                                group-hover/skill:translate-x-1
+                                            "
+                                        >
+                                            →
                                         </span>
                                     </div>
                                 ))}
@@ -251,7 +343,7 @@ function Skills() {
                         }
                     `}
                     style={{
-                        transitionDelay: "850ms",
+                        transitionDelay: "800ms",
                     }}
                 >
                     <span className="w-8 h-px bg-red-500"></span>
@@ -267,4 +359,3 @@ function Skills() {
 }
 
 export default Skills;
-
