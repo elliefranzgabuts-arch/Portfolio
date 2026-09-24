@@ -9,38 +9,47 @@ function Skills() {
             number: "01",
             title: "Frontend",
             description:
-                "Technologies I use to build and design interfaces for the web.",
+                "Technologies I use to build responsive, interactive, and modern web interfaces.",
             skills: [
+                "React",
+                "JavaScript",
                 "HTML",
                 "CSS",
-                "JavaScript",
                 "Tailwind CSS",
-                "React",
             ],
         },
         {
             number: "02",
             title: "Backend",
             description:
-                "Technologies I'm exploring to understand how applications work behind the interface.",
+                "Technologies I use to build server-side logic, APIs, and application functionality.",
             skills: [
                 "Node.js",
                 "Express.js",
-                "Python",
-                "Flask",
+                "REST API",
             ],
         },
         {
             number: "03",
-            title: "Tools & Database",
+            title: "Database",
             description:
-                "Tools I use for development, version control, design, and data management.",
+                "Technologies and services I use to store, manage, and connect application data.",
             skills: [
                 "MySQL",
+                "MySQL2",
+                "Aiven",
+            ],
+        },
+        {
+            number: "04",
+            title: "Deployment",
+            description:
+                "Platforms and infrastructure I use to deploy and make applications accessible online.",
+            skills: [
+                "Render",
+                "Cloudflare",
                 "Git",
                 "GitHub",
-                "Figma",
-                "VS Code",
             ],
         },
     ];
@@ -106,15 +115,15 @@ function Skills() {
                         </h1>
 
                         <p className="text-gray-400 text-lg leading-relaxed max-w-lg lg:ml-auto">
-                            Technologies and tools I've been learning and
-                            using while building projects as a student
+                            Technologies, platforms, and tools I use while
+                            building and deploying projects as a student
                             developer.
                         </p>
                     </div>
                 </div>
 
                 {/* Skill Categories */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {skillGroups.map((group, groupIndex) => (
                         <article
                             key={group.number}
@@ -242,13 +251,13 @@ function Skills() {
                         }
                     `}
                     style={{
-                        transitionDelay: "700ms",
+                        transitionDelay: "850ms",
                     }}
                 >
                     <span className="w-8 h-px bg-red-500"></span>
 
                     <p className="text-sm text-gray-600">
-                        I'm still learning, and this list will keep growing.
+                        I'm still learning, and this stack will keep growing.
                     </p>
                 </div>
 
@@ -258,3 +267,4 @@ function Skills() {
 }
 
 export default Skills;
+
