@@ -52,10 +52,8 @@ function Footer() {
     return (
         <footer className="border-t border-[#181818] bg-black px-6 md:px-10 py-8">
             <div className="max-w-6xl mx-auto">
-
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
 
-                    {/* Logo */}
                     <a
                         href="#home"
                         aria-label="Back to home"
@@ -74,7 +72,6 @@ function Footer() {
                         EF<span className="text-red-500">.</span>
                     </a>
 
-                    {/* Navigation */}
                     <nav
                         aria-label="Footer navigation"
                         className="
@@ -104,7 +101,6 @@ function Footer() {
                         ))}
                     </nav>
 
-                    {/* Copyright + Visitors */}
                     <div className="text-center lg:text-right">
                         <p className="text-xs text-gray-600">
                             © 2026 Ellie Franz M. Gabutin
@@ -119,17 +115,15 @@ function Footer() {
                     </div>
                 </div>
 
-                {/* Bottom line */}
                 <div className="mt-8 pt-5 border-t border-[#111] flex flex-col sm:flex-row items-center justify-between gap-3">
                     <p className="text-[11px] uppercase tracking-[0.18em] text-gray-700">
                         Still learning. Still building.
                     </p>
 
                     <p className="text-[11px] text-gray-700">
-                        Built with React
+                        Built while learning.
                     </p>
                 </div>
-
             </div>
         </footer>
     );

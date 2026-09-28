@@ -1,121 +1,107 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 function Analytics() {
-    const [password, setPassword] = useState("");
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [authChecking, setAuthChecking] = useState(true);
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
     const [status, setStatus] = useState("");
+    const [loginPassword, setLoginPassword] = useState("");
 
     const API_URL = import.meta.env.VITE_API_URL;
 
-    const parseResponse = async (response) => {
-        let data;
+    const apiFetch = useCallback(
+        async (endpoint, options = {}) => {
+            const token = sessionStorage.getItem("adminToken");
 
-        try {
-            data = await response.json();
-        } catch {
-            throw new Error(
-                `Server returned an invalid response (${response.status}).`
-            );
-        }
+            const headers = {
+                "Content-Type": "application/json",
+                ...(options.headers || {}),
+                ...(token
+                    ? {
+                          Authorization: `Bearer ${token}`,
+                      }
+                    : {}),
+            };
 
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                    `Request failed with status ${response.status}.`
-            );
-        }
-
-        return data;
-    };
-
-    const apiFetch = async (endpoint, options = {}) => {
-        if (!API_URL) {
-            throw new Error("API URL is not configured.");
-        }
-
-        const response = await fetch(
-            `${API_URL}${endpoint}`,
-            options
-        );
-
-        return parseResponse(response);
-    };
-
-    const authenticatedFetch = async (
-        endpoint,
-        options = {}
-    ) => {
-        const token = sessionStorage.getItem("adminToken");
-
-        if (!token) {
-            setIsAuthenticated(false);
-            setAnalytics(null);
-
-            throw new Error(
-                "No admin session found. Please log in again."
-            );
-        }
-
-        const headers = {
-            ...(options.headers || {}),
-            Authorization: `Bearer ${token}`,
-        };
-
-        try {
-            return await apiFetch(endpoint, {
+            const response = await fetch(`${API_URL}${endpoint}`, {
                 ...options,
                 headers,
             });
-        } catch (error) {
-            if (
-                error.message ===
-                "Invalid or expired token."
-            ) {
-                sessionStorage.removeItem("adminToken");
-                setIsAuthenticated(false);
-                setAnalytics(null);
 
+            let data;
+
+            try {
+                data = await response.json();
+            } catch {
+                data = {};
+            }
+
+            if (!response.ok) {
                 throw new Error(
-                    "Your admin session is invalid or expired. Please log in again."
+                    data.message || "Something went wrong."
                 );
             }
 
-            throw error;
-        }
-    };
+            return data;
+        },
+        [API_URL]
+    );
 
-    const getMessageKey = (message) => {
+    const authenticatedFetch = useCallback(
+        async (endpoint, options = {}) => {
+            const token = sessionStorage.getItem("adminToken");
+
+            const headers = {
+                ...(options.headers || {}),
+                Authorization: `Bearer ${token}`,
+            };
+
+            try {
+                return await apiFetch(endpoint, {
+                    ...options,
+                    headers,
+                });
+            } catch (error) {
+                if (
+                    error.message ===
+                    "Invalid or expired token."
+                ) {
+                    sessionStorage.removeItem("adminToken");
+                    setIsAuthenticated(false);
+                    setAnalytics(null);
+
+                    throw new Error(
+                        "Your admin session is invalid or expired. Please log in again.",
+                        { cause: error }
+                    );
+                }
+
+                throw error;
+            }
+        },
+        [apiFetch]
+    );
+
+    const getMessageKey = (message, index) => {
         if (
             message.id !== undefined &&
             message.id !== null
         ) {
-            return `message-${String(message.id)}`;
+            return `id-${message.id}`;
         }
 
-        return `message-${[
-            message.name,
-            message.email,
-            message.created_at,
-            message.message,
-        ]
-            .map((value) => String(value ?? ""))
-            .join("|")}`;
+        return `${message.email || "unknown"}-${
+            message.created_at ||
+            message.createdAt ||
+            message.name ||
+            `message-${index}`
+        }`;
     };
 
-    const fetchAnalytics = async (isRefresh = false) => {
-        if (isRefresh) {
-            setRefreshing(true);
-            setStatus("Refreshing analytics...");
-        } else {
-            setLoading(true);
-            setStatus("Loading analytics...");
-        }
-
+    const fetchAnalytics = useCallback(async () => {
+        setLoading(true);
         setError("");
 
         try {
@@ -123,42 +109,31 @@ function Analytics() {
                 "/api/analytics"
             );
 
-            if (!data.success) {
-                throw new Error(
-                    data.message ||
-                        "Failed to load analytics."
-                );
+            if (data.success) {
+                setAnalytics(data);
+            } else {
+                setAnalytics(data);
             }
-
-            setAnalytics(data);
-            setIsAuthenticated(true);
-            setError("");
-
-            setStatus(
-                isRefresh
-                    ? "Analytics refreshed successfully."
-                    : "Analytics loaded successfully."
-            );
-
-            return true;
         } catch (error) {
             console.error("Analytics error:", error);
 
-            const message =
-                error.message === "Failed to fetch"
-                    ? "Unable to connect to the analytics server."
-                    : error.message ||
-                      "Failed to load analytics.";
-
-            setError(message);
-            setStatus(message);
-
-            return false;
+            if (
+                error.message ===
+                "Your admin session is invalid or expired. Please log in again."
+            ) {
+                setStatus(
+                    "Your admin session is invalid or expired. Please log in again."
+                );
+            } else {
+                setError(
+                    error.message ||
+                        "Unable to load analytics."
+                );
+            }
         } finally {
             setLoading(false);
-            setRefreshing(false);
         }
-    };
+    }, [authenticatedFetch]);
 
     useEffect(() => {
         let isMounted = true;
@@ -170,7 +145,6 @@ function Analytics() {
             if (!token) {
                 if (isMounted) {
                     setAuthChecking(false);
-                    setStatus("No active admin session.");
                 }
 
                 return;
@@ -180,10 +154,28 @@ function Analytics() {
                 setStatus("Checking admin session...");
             }
 
-            await fetchAnalytics();
+            try {
+                await fetchAnalytics();
 
-            if (isMounted) {
-                setAuthChecking(false);
+                if (isMounted) {
+                    setIsAuthenticated(true);
+                }
+            } catch (error) {
+                console.error(
+                    "Session validation error:",
+                    error
+                );
+
+                if (isMounted) {
+                    sessionStorage.removeItem(
+                        "adminToken"
+                    );
+                    setIsAuthenticated(false);
+                }
+            } finally {
+                if (isMounted) {
+                    setAuthChecking(false);
+                }
             }
         };
 
@@ -192,7 +184,7 @@ function Analytics() {
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [fetchAnalytics]);
 
     const handleLogin = async (event) => {
         event.preventDefault();
@@ -204,11 +196,8 @@ function Analytics() {
         try {
             const data = await apiFetch("/api/login", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
                 body: JSON.stringify({
-                    password,
+                    password: loginPassword,
                 }),
             });
 
@@ -223,31 +212,19 @@ function Analytics() {
                 data.token
             );
 
-            setPassword("");
-            setError("");
-            setStatus(
-                "Login successful. Loading analytics..."
-            );
+            setLoginPassword("");
+            setIsAuthenticated(true);
+            setStatus("Login successful.");
 
-            const authenticated = await fetchAnalytics();
-
-            if (!authenticated) {
-                sessionStorage.removeItem(
-                    "adminToken"
-                );
-
-                setIsAuthenticated(false);
-            }
+            await fetchAnalytics();
         } catch (error) {
             console.error("Login error:", error);
 
-            const message =
-                error.message === "Failed to fetch"
-                    ? "Unable to connect to the server."
-                    : error.message || "Login failed.";
-
-            setError(message);
-            setStatus(message);
+            setError(
+                error.message ||
+                    "Unable to log in. Please try again."
+            );
+            setStatus("");
         } finally {
             setLoading(false);
         }
@@ -258,33 +235,26 @@ function Analytics() {
 
         setIsAuthenticated(false);
         setAnalytics(null);
-        setPassword("");
         setError("");
-        setStatus("You have been logged out.");
+        setStatus("Logged out.");
+    };
+
+    const handleRefresh = async () => {
+        setStatus("Refreshing analytics...");
+        setError("");
+
+        await fetchAnalytics();
+
+        setStatus("Analytics updated.");
     };
 
     if (authChecking) {
         return (
-            <main
-                className="min-h-screen bg-black px-6 py-24 text-white"
-                aria-label="Checking authentication"
-            >
-                <div className="mx-auto flex min-h-[70vh] max-w-md items-center justify-center">
-                    <div
-                        className="text-center"
-                        role="status"
-                        aria-live="polite"
-                        aria-atomic="true"
-                    >
-                        <div
-                            className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-red-500"
-                            aria-hidden="true"
-                        />
-
-                        <p className="mt-5 text-sm text-gray-500">
-                            Checking admin session...
-                        </p>
-                    </div>
+            <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+                <div className="text-center">
+                    <p className="text-sm text-gray-400">
+                        Checking admin session...
+                    </p>
                 </div>
             </main>
         );
@@ -292,108 +262,80 @@ function Analytics() {
 
     if (!isAuthenticated) {
         return (
-            <main
-                className="min-h-screen bg-black px-6 py-24 text-white"
-                aria-labelledby="admin-login-title"
-            >
-                <div className="mx-auto flex min-h-[70vh] max-w-md items-center justify-center">
-                    <div
-                        className="w-full border border-white/10 bg-[#0a0a0a] p-8"
-                        aria-busy={loading}
-                    >
+            <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+                <div className="w-full max-w-md">
+                    <div className="border border-[#202020] bg-[#080808] p-8">
                         <div className="mb-8">
-                            <p
-                                className="text-xs font-semibold uppercase tracking-[0.3em] text-red-500"
-                                aria-hidden="true"
-                            >
+                            <p className="text-xs uppercase tracking-[0.2em] text-red-500">
                                 Private Area
                             </p>
 
-                            <h1
-                                id="admin-login-title"
-                                className="mt-3 text-3xl font-bold tracking-tight"
-                            >
+                            <h1 className="mt-3 text-3xl font-semibold tracking-tight">
                                 Admin Login
                             </h1>
 
-                            <p
-                                id="admin-login-description"
-                                className="mt-3 text-sm leading-relaxed text-gray-500"
-                            >
+                            <p className="mt-3 text-sm leading-6 text-gray-500">
                                 Enter your admin password to
-                                access your website analytics.
+                                access the analytics dashboard.
                             </p>
                         </div>
 
                         <form
                             onSubmit={handleLogin}
-                            aria-describedby="admin-login-description"
+                            className="space-y-5"
                         >
-                            <label
-                                htmlFor="admin-password"
-                                className="mb-2 block text-xs font-semibold uppercase tracking-[0.15em] text-gray-500"
-                            >
-                                Password
-                            </label>
+                            <div>
+                                <label
+                                    htmlFor="admin-password"
+                                    className="mb-2 block text-xs uppercase tracking-[0.15em] text-gray-500"
+                                >
+                                    Password
+                                </label>
 
-                            <input
-                                id="admin-password"
-                                name="password"
-                                type="password"
-                                value={password}
-                                onChange={(event) =>
-                                    setPassword(
-                                        event.target.value
-                                    )
-                                }
-                                placeholder="Enter admin password"
-                                autoComplete="current-password"
-                                aria-required="true"
-                                aria-invalid={
-                                    error ? "true" : "false"
-                                }
-                                aria-describedby={
-                                    error
-                                        ? "login-error"
-                                        : "admin-login-description"
-                                }
-                                className="w-full border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition focus:border-red-500"
-                                required
-                            />
+                                <input
+                                    id="admin-password"
+                                    type="password"
+                                    value={loginPassword}
+                                    onChange={(event) =>
+                                        setLoginPassword(
+                                            event.target.value
+                                        )
+                                    }
+                                    required
+                                    autoComplete="current-password"
+                                    className="w-full border border-[#252525] bg-black px-4 py-3 text-sm text-white outline-none transition-colors focus:border-red-500"
+                                    placeholder="Enter password"
+                                />
+                            </div>
 
                             {error && (
                                 <p
-                                    id="login-error"
-                                    className="mt-3 text-sm leading-relaxed text-red-400"
                                     role="alert"
+                                    className="text-sm text-red-400"
                                 >
                                     {error}
+                                </p>
+                            )}
+
+                            {status && (
+                                <p
+                                    role="status"
+                                    aria-live="polite"
+                                    className="text-sm text-gray-500"
+                                >
+                                    {status}
                                 </p>
                             )}
 
                             <button
                                 type="submit"
                                 disabled={loading}
-                                aria-label={
-                                    loading
-                                        ? "Logging in"
-                                        : "Log in to admin analytics"
-                                }
-                                aria-busy={loading}
-                                className="mt-5 w-full border border-red-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="w-full bg-white px-5 py-3 text-sm font-medium text-black transition-colors duration-300 hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {loading
                                     ? "Logging in..."
-                                    : "Login"}
+                                    : "Enter Dashboard"}
                             </button>
-
-                            <div
-                                className="sr-only"
-                                aria-live="polite"
-                                aria-atomic="true"
-                            >
-                                {status}
-                            </div>
                         </form>
                     </div>
                 </div>
@@ -402,69 +344,32 @@ function Analytics() {
     }
 
     return (
-        <main
-            className="min-h-screen bg-black px-6 py-20 text-white md:px-10"
-            aria-labelledby="analytics-title"
-            aria-busy={loading || refreshing}
-        >
+        <main className="min-h-screen bg-black text-white px-6 py-10 md:px-10">
             <div className="mx-auto max-w-6xl">
-                <div className="mb-12 flex flex-col justify-between gap-6 border-b border-white/10 pb-8 sm:flex-row sm:items-end">
+                <header className="flex flex-col gap-5 border-b border-[#181818] pb-8 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p
-                            className="text-xs font-semibold uppercase tracking-[0.3em] text-red-500"
-                            aria-hidden="true"
-                        >
-                            Private Dashboard
+                        <p className="text-xs uppercase tracking-[0.2em] text-red-500">
+                            Private Area
                         </p>
 
-                        <h1
-                            id="analytics-title"
-                            className="mt-3 text-4xl font-bold tracking-tight md:text-5xl"
-                        >
-                            Analytics
+                        <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
+                            Analytics Dashboard
                         </h1>
 
-                        <p
-                            id="analytics-description"
-                            className="mt-3 max-w-xl text-sm leading-relaxed text-gray-500"
-                        >
-                            Monitor website visitors and
-                            messages from your portfolio.
+                        <p className="mt-3 text-sm text-gray-500">
+                            Overview of visitors, messages,
+                            and website activity.
                         </p>
                     </div>
 
-                    <div
-                        className="flex items-center gap-3"
-                        aria-label="Analytics controls"
-                    >
+                    <div className="flex gap-3">
                         <button
                             type="button"
-                            onClick={() =>
-                                fetchAnalytics(true)
-                            }
-                            disabled={
-                                refreshing || loading
-                            }
-                            aria-label={
-                                refreshing
-                                    ? "Refreshing analytics"
-                                    : "Refresh analytics"
-                            }
-                            aria-busy={refreshing}
-                            className="flex items-center gap-2 border border-white/10 px-5 py-3 text-sm font-semibold text-gray-400 transition hover:border-red-500 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={handleRefresh}
+                            disabled={loading}
+                            className="border border-[#252525] px-4 py-2 text-xs uppercase tracking-[0.12em] text-gray-300 transition-colors hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            <span
-                                aria-hidden="true"
-                                className={
-                                    refreshing
-                                        ? "animate-spin"
-                                        : ""
-                                }
-                            >
-                                ↻
-                            </span>
-
-                            {refreshing
+                            {loading
                                 ? "Refreshing..."
                                 : "Refresh"}
                         </button>
@@ -472,195 +377,164 @@ function Analytics() {
                         <button
                             type="button"
                             onClick={handleLogout}
-                            aria-label="Log out of admin dashboard"
-                            className="border border-white/10 px-5 py-3 text-sm font-semibold text-gray-400 transition hover:border-red-500 hover:text-red-500"
+                            className="border border-[#252525] px-4 py-2 text-xs uppercase tracking-[0.12em] text-gray-500 transition-colors hover:border-red-500 hover:text-red-400"
                         >
                             Logout
                         </button>
                     </div>
-                </div>
+                </header>
 
-                <div
-                    className="sr-only"
-                    role="status"
-                    aria-live="polite"
-                    aria-atomic="true"
-                >
-                    {status}
-                </div>
-
-                {loading && !analytics && (
-                    <div
-                        className="text-sm text-gray-500"
+                {status && (
+                    <p
                         role="status"
                         aria-live="polite"
+                        className="mt-5 text-sm text-gray-500"
                     >
-                        Loading analytics...
-                    </div>
+                        {status}
+                    </p>
                 )}
 
                 {error && (
-                    <div
-                        className="border border-red-500/20 bg-red-500/5 p-5"
+                    <p
                         role="alert"
-                        aria-live="assertive"
+                        className="mt-5 text-sm text-red-400"
                     >
-                        <p className="text-sm leading-relaxed text-red-400">
-                            {error}
-                        </p>
-                    </div>
+                        {error}
+                    </p>
                 )}
 
-                {analytics && !error && (
-                    <>
-                        <div
-                            className="grid gap-5 md:grid-cols-2"
-                            aria-label="Analytics summary"
-                        >
-                            <div className="border border-white/10 bg-[#0a0a0a] p-7 transition hover:border-red-500/40">
-                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-600">
-                                    Unique Visitors
-                                </p>
-
-                                <p
-                                    className="mt-5 text-5xl font-bold tracking-tight"
-                                    aria-label={`${analytics.totalVisitors} unique visitors`}
-                                >
-                                    {analytics.totalVisitors}
-                                </p>
-
-                                <p className="mt-3 text-sm text-gray-600">
-                                    Total unique visitor IDs
-                                    recorded
-                                </p>
-                            </div>
-
-                            <div className="border border-white/10 bg-[#0a0a0a] p-7 transition hover:border-red-500/40">
-                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-600">
-                                    Contact Messages
-                                </p>
-
-                                <p
-                                    className="mt-5 text-5xl font-bold tracking-tight"
-                                    aria-label={`${analytics.totalMessages} contact messages`}
-                                >
-                                    {analytics.totalMessages}
-                                </p>
-
-                                <p className="mt-3 text-sm text-gray-600">
-                                    Messages received through
-                                    your portfolio
-                                </p>
-                            </div>
-                        </div>
-
-                        <section
-                            className="mt-14"
-                            aria-labelledby="recent-messages-title"
-                        >
-                            <div className="mb-6 flex items-center justify-between">
-                                <div>
-                                    <p
-                                        className="text-xs font-semibold uppercase tracking-[0.2em] text-red-500"
-                                        aria-hidden="true"
-                                    >
-                                        Inbox
+                {analytics && (
+                    <div className="mt-10 space-y-10">
+                        <section>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                <div className="border border-[#181818] bg-[#080808] p-6">
+                                    <p className="text-xs uppercase tracking-[0.15em] text-gray-600">
+                                        Total Visitors
                                     </p>
 
-                                    <h2
-                                        id="recent-messages-title"
-                                        className="mt-2 text-2xl font-bold"
-                                    >
-                                        Recent Messages
-                                    </h2>
-                                </div>
-
-                                <p className="text-xs text-gray-600">
-                                    Latest 10
-                                </p>
-                            </div>
-
-                            {!Array.isArray(
-                                analytics.latestMessages
-                            ) ||
-                            analytics.latestMessages
-                                .length === 0 ? (
-                                <div className="border border-white/10 bg-[#0a0a0a] p-8">
-                                    <p className="text-sm text-gray-500">
-                                        No messages yet.
+                                    <p className="mt-3 text-3xl font-semibold">
+                                        {analytics.totalVisitors ??
+                                            analytics.visitorCount ??
+                                            0}
                                     </p>
                                 </div>
-                            ) : (
-                                <div
-                                    className="space-y-4"
-                                    aria-live="polite"
-                                    aria-label="Recent contact messages"
-                                >
-                                    {analytics.latestMessages.map(
-                                        (message) => {
-                                            const messageKey =
-                                                getMessageKey(
-                                                    message
-                                                );
 
-                                            return (
-                                                <article
-                                                    key={
-                                                        messageKey
-                                                    }
-                                                    className="border border-white/10 bg-[#0a0a0a] p-6 transition hover:border-white/20"
-                                                    aria-labelledby={`${messageKey}-name`}
-                                                >
-                                                    <div className="flex flex-col justify-between gap-4 border-b border-white/10 pb-5 sm:flex-row">
-                                                        <div>
-                                                            <h3
-                                                                id={`${messageKey}-name`}
-                                                                className="font-semibold text-white"
-                                                            >
-                                                                {
-                                                                    message.name
-                                                                }
-                                                            </h3>
+                                <div className="border border-[#181818] bg-[#080808] p-6">
+                                    <p className="text-xs uppercase tracking-[0.15em] text-gray-600">
+                                        Messages
+                                    </p>
 
-                                                            <a
-                                                                href={`mailto:${message.email}`}
-                                                                aria-label={`Email ${message.name} at ${message.email}`}
-                                                                className="mt-1 block text-sm text-gray-500 transition hover:text-red-500"
-                                                            >
-                                                                {
-                                                                    message.email
-                                                                }
-                                                            </a>
-                                                        </div>
-
-                                                        <time
-                                                            dateTime={
-                                                                message.created_at ||
-                                                                undefined
-                                                            }
-                                                            className="text-xs text-gray-600"
-                                                        >
-                                                            {message.created_at
-                                                                ? new Date(
-                                                                      message.created_at
-                                                                  ).toLocaleString()
-                                                                : "Unknown date"}
-                                                        </time>
-                                                    </div>
-
-                                                    <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-gray-400">
-                                                        {
-                                                            message.message
-                                                        }
-                                                    </p>
-                                                </article>
-                                            );
-                                        }
-                                    )}
+                                    <p className="mt-3 text-3xl font-semibold">
+                                        {analytics.totalMessages ??
+                                            analytics.messageCount ??
+                                            0}
+                                    </p>
                                 </div>
-                            )}
+
+                                <div className="border border-[#181818] bg-[#080808] p-6">
+                                    <p className="text-xs uppercase tracking-[0.15em] text-gray-600">
+                                        Newest Visitor
+                                    </p>
+
+                                    <p className="mt-3 text-sm text-gray-300">
+                                        {analytics.latestVisitor ??
+                                            "—"}
+                                    </p>
+                                </div>
+
+                                <div className="border border-[#181818] bg-[#080808] p-6">
+                                    <p className="text-xs uppercase tracking-[0.15em] text-gray-600">
+                                        Status
+                                    </p>
+
+                                    <p className="mt-3 text-sm text-green-400">
+                                        Connected
+                                    </p>
+                                </div>
+                            </div>
                         </section>
-                    </>
+
+                        <section>
+                            <div className="mb-5">
+                                <h2 className="text-xl font-semibold">
+                                    Recent Messages
+                                </h2>
+
+                                <p className="mt-2 text-sm text-gray-600">
+                                    Messages submitted through
+                                    your portfolio contact form.
+                                </p>
+                            </div>
+
+                            <div className="overflow-x-auto border border-[#181818]">
+                                {Array.isArray(
+                                    analytics.messages
+                                ) &&
+                                analytics.messages.length > 0 ? (
+                                    <table className="w-full min-w-[700px] text-left">
+                                        <thead className="border-b border-[#181818] bg-[#080808]">
+                                            <tr>
+                                                <th className="px-5 py-4 text-xs uppercase tracking-[0.12em] text-gray-600">
+                                                    Name
+                                                </th>
+
+                                                <th className="px-5 py-4 text-xs uppercase tracking-[0.12em] text-gray-600">
+                                                    Email
+                                                </th>
+
+                                                <th className="px-5 py-4 text-xs uppercase tracking-[0.12em] text-gray-600">
+                                                    Message
+                                                </th>
+
+                                                <th className="px-5 py-4 text-xs uppercase tracking-[0.12em] text-gray-600">
+                                                    Date
+                                                </th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            {analytics.messages.map(
+                                                (message, index) => (
+                                                    <tr
+                                                        key={getMessageKey(
+                                                            message,
+                                                            index
+                                                        )}
+                                                        className="border-b border-[#111] last:border-b-0"
+                                                    >
+                                                        <td className="px-5 py-4 text-sm text-gray-300">
+                                                            {message.name ||
+                                                                "—"}
+                                                        </td>
+
+                                                        <td className="px-5 py-4 text-sm text-gray-400">
+                                                            {message.email ||
+                                                                "—"}
+                                                        </td>
+
+                                                        <td className="max-w-md px-5 py-4 text-sm leading-6 text-gray-400">
+                                                            {message.message ||
+                                                                "—"}
+                                                        </td>
+
+                                                        <td className="whitespace-nowrap px-5 py-4 text-xs text-gray-600">
+                                                            {message.created_at ||
+                                                                message.createdAt ||
+                                                                "—"}
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            )}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div className="px-6 py-10 text-center text-sm text-gray-600">
+                                        No messages yet.
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    </div>
                 )}
             </div>
         </main>
@@ -668,4 +542,3 @@ function Analytics() {
 }
 
 export default Analytics;
-

@@ -10,8 +10,39 @@ function Contact(props) {
         message: "",
     });
 
+    const [isSending, setIsSending] = useState(false);
+    const [status, setStatus] = useState({
+        type: "",
+        message: "",
+    });
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+
+        if (status.message) {
+            setStatus({
+                type: "",
+                message: "",
+            });
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (isSending) return;
+
+        setIsSending(true);
+
+        setStatus({
+            type: "",
+            message: "",
+        });
 
         try {
             const response = await fetch(
@@ -27,18 +58,32 @@ function Contact(props) {
 
             const data = await response.json();
 
-            if (data.success) {
-                alert("Message sent successfully!");
-
-                setFormData({
-                    name: "",
-                    email: "",
-                    message: "",
-                });
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.message || "Failed to send message."
+                );
             }
+
+            setFormData({
+                name: "",
+                email: "",
+                message: "",
+            });
+
+            setStatus({
+                type: "success",
+                message: "Message sent successfully.",
+            });
         } catch (error) {
             console.error("Error sending message:", error);
-            alert("Failed to send message.");
+
+            setStatus({
+                type: "error",
+                message:
+                    "Something went wrong. Please try again or send me an email.",
+            });
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -68,9 +113,26 @@ function Contact(props) {
         <section
             ref={contactRef}
             id="contact"
-            className="bg-black text-white px-6 md:px-10 py-28 scroll-mt-24 overflow-hidden"
+            className="
+                relative
+                bg-black
+                text-white
+                px-6
+                md:px-10
+                py-28
+                md:py-32
+                scroll-mt-24
+                overflow-hidden
+            "
         >
-            <div className="max-w-6xl mx-auto">
+            {/* SUBTLE BACKGROUND DETAILS */}
+            <div className="absolute top-0 left-0 w-full h-px bg-[#171717]"></div>
+
+            <div className="absolute top-28 right-0 w-32 h-px bg-red-500/20"></div>
+
+            <div className="absolute bottom-28 left-0 w-24 h-px bg-red-500/10"></div>
+
+            <div className="relative max-w-6xl mx-auto">
                 {/* SECTION LABEL */}
                 <div
                     className={`
@@ -96,7 +158,7 @@ function Contact(props) {
 
                 {/* MAIN CONTENT */}
                 <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-16 lg:gap-24">
-                    {/* LEFT */}
+                    {/* LEFT SIDE */}
                     <div
                         className={`
                             transition-all
@@ -123,7 +185,7 @@ function Contact(props) {
                             learning, building, and connecting with new people.
                         </p>
 
-                        {/* EMAIL LINK */}
+                        {/* PRIMARY EMAIL CTA */}
                         <a
                             href={`mailto:${props.email}`}
                             className="
@@ -163,7 +225,7 @@ function Contact(props) {
                         </a>
                     </div>
 
-                    {/* RIGHT */}
+                    {/* RIGHT SIDE */}
                     <div
                         className={`
                             transition-all
@@ -178,43 +240,12 @@ function Contact(props) {
                             transitionDelay: "200ms",
                         }}
                     >
+                        {/* CONTACT DETAILS */}
                         <p className="text-xs font-semibold tracking-[0.25em] text-gray-600 uppercase mb-2">
                             Get in touch
                         </p>
 
                         <div className="border-t border-[#242424]">
-                            {/* EMAIL */}
-                            <a
-                                href={`mailto:${props.email}`}
-                                className="
-                                    group
-                                    flex
-                                    items-center
-                                    justify-between
-                                    gap-6
-                                    py-6
-                                    border-b
-                                    border-[#242424]
-                                    transition-all
-                                    duration-300
-                                    hover:pl-3
-                                "
-                            >
-                                <div className="min-w-0">
-                                    <p className="text-xs text-gray-600 uppercase tracking-[0.15em] mb-2">
-                                        Email
-                                    </p>
-
-                                    <p className="text-gray-200 text-base md:text-lg break-all">
-                                        {props.email}
-                                    </p>
-                                </div>
-
-                                <span className="text-gray-600 text-xl shrink-0 transition-all duration-300 group-hover:text-red-500 group-hover:translate-x-1">
-                                    →
-                                </span>
-                            </a>
-
                             {/* PHONE */}
                             <a
                                 href={`tel:${props.phone}`}
@@ -242,7 +273,17 @@ function Contact(props) {
                                     </p>
                                 </div>
 
-                                <span className="text-gray-600 text-xl shrink-0 transition-all duration-300 group-hover:text-red-500 group-hover:translate-x-1">
+                                <span
+                                    className="
+                                        text-gray-600
+                                        text-xl
+                                        shrink-0
+                                        transition-all
+                                        duration-300
+                                        group-hover:text-red-500
+                                        group-hover:translate-x-1
+                                    "
+                                >
                                     →
                                 </span>
                             </a>
@@ -269,53 +310,119 @@ function Contact(props) {
                                 onSubmit={handleSubmit}
                                 className="space-y-5"
                             >
+                                {/* NAME */}
                                 <input
                                     type="text"
                                     name="name"
                                     placeholder="Your name"
                                     value={formData.name}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            name: e.target.value,
-                                        })
-                                    }
-                                    className="w-full bg-transparent border-b border-[#242424] py-3 text-white outline-none focus:border-red-500"
+                                    onChange={handleChange}
+                                    required
+                                    autoComplete="name"
+                                    className="
+                                        w-full
+                                        bg-transparent
+                                        border-b
+                                        border-[#242424]
+                                        py-3
+                                        text-white
+                                        placeholder:text-gray-700
+                                        outline-none
+                                        transition-colors
+                                        duration-300
+                                        focus:border-red-500
+                                    "
                                 />
 
+                                {/* EMAIL */}
                                 <input
                                     type="email"
                                     name="email"
                                     placeholder="Your email"
                                     value={formData.email}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            email: e.target.value,
-                                        })
-                                    }
-                                    className="w-full bg-transparent border-b border-[#242424] py-3 text-white outline-none focus:border-red-500"
+                                    onChange={handleChange}
+                                    required
+                                    autoComplete="email"
+                                    className="
+                                        w-full
+                                        bg-transparent
+                                        border-b
+                                        border-[#242424]
+                                        py-3
+                                        text-white
+                                        placeholder:text-gray-700
+                                        outline-none
+                                        transition-colors
+                                        duration-300
+                                        focus:border-red-500
+                                    "
                                 />
 
+                                {/* MESSAGE */}
                                 <textarea
                                     name="message"
                                     placeholder="Your message"
                                     rows="4"
                                     value={formData.message}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            message: e.target.value,
-                                        })
-                                    }
-                                    className="w-full bg-transparent border-b border-[#242424] py-3 text-white outline-none resize-none focus:border-red-500"
-                                />
+                                    onChange={handleChange}
+                                    required
+                                    className="
+                                        w-full
+                                        bg-transparent
+                                        border-b
+                                        border-[#242424]
+                                        py-3
+                                        text-white
+                                        placeholder:text-gray-700
+                                        outline-none
+                                        resize-none
+                                        transition-colors
+                                        duration-300
+                                        focus:border-red-500
+                                    "
+                                ></textarea>
 
+                                {/* STATUS MESSAGE */}
+                                {status.message && (
+                                    <p
+                                        className={`
+                                            text-xs
+                                            leading-relaxed
+                                            ${
+                                                status.type === "success"
+                                                    ? "text-green-400"
+                                                    : "text-red-400"
+                                            }
+                                        `}
+                                        role="status"
+                                        aria-live="polite"
+                                    >
+                                        {status.message}
+                                    </p>
+                                )}
+
+                                {/* SUBMIT BUTTON */}
                                 <button
                                     type="submit"
-                                    className="border border-red-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-500"
+                                    disabled={isSending}
+                                    className="
+                                        border
+                                        border-red-500
+                                        px-6
+                                        py-3
+                                        text-sm
+                                        font-semibold
+                                        text-white
+                                        transition-all
+                                        duration-300
+                                        hover:bg-red-500
+                                        disabled:opacity-50
+                                        disabled:cursor-not-allowed
+                                    "
                                 >
-                                    Send Message
+                                    {isSending
+                                        ? "Sending..."
+                                        : "Send Message"}
                                 </button>
                             </form>
                         </div>
@@ -331,7 +438,7 @@ function Contact(props) {
                                 <a
                                     href="https://www.facebook.com/share/1DKUnE2q3L/"
                                     target="_blank"
-                                    rel="noreferrer"
+                                    rel="noopener noreferrer"
                                     className="
                                         text-gray-400
                                         text-sm
@@ -350,7 +457,7 @@ function Contact(props) {
                                 <a
                                     href="https://github.com/elliefranzgabuts-arch"
                                     target="_blank"
-                                    rel="noreferrer"
+                                    rel="noopener noreferrer"
                                     className="
                                         text-gray-400
                                         text-sm
@@ -369,7 +476,7 @@ function Contact(props) {
                                 <a
                                     href="https://www.linkedin.com/in/ellie-franz-gabutin-9881783b3"
                                     target="_blank"
-                                    rel="noreferrer"
+                                    rel="noopener noreferrer"
                                     className="
                                         text-gray-400
                                         text-sm

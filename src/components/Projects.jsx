@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import ourLittleWorld from "../assets/images/our-little-world.png";
 import jdServices from "../assets/images/jd&s.png";
 import campusConnect from "../assets/images/campus.png";
-import qTrack from "../assets/images/quetrack.png";
 
 function Projects() {
     const [isVisible, setIsVisible] = useState(false);
@@ -15,7 +14,7 @@ function Projects() {
             status: "In Progress",
             title: "Our Little World",
             description:
-                "A personal website I built for my girlfriend while learning web development. It was designed as a place where we can keep our memories, bucket list, and other moments in one place. The project is still in progress as I continue improving it.",
+                "A personal website I built for my girlfriend while learning web development. It brings our memories, bucket list, and favorite moments together in one place. The project is still in progress as I continue improving and adding new ideas.",
             technologies: [
                 "HTML",
                 "CSS",
@@ -36,7 +35,7 @@ function Projects() {
             status: "UI/UX Contributor",
             title: "JD&S Services",
             description:
-                "A team project focused on a food delivery and services website for local restaurants in Iloilo. I contributed to the project by designing the user interface and overall visual direction in Figma, helping the team plan the website's layout and user experience.",
+                "A team project focused on a food delivery and services website for local restaurants in Iloilo. I worked on the interface and visual direction, helping shape the layout and overall user experience before development.",
             contribution:
                 "UI/UX design and visual direction using Figma.",
             technologies: [
@@ -53,7 +52,7 @@ function Projects() {
             status: "System Flow Contributor",
             title: "CampusConnect",
             description:
-                "A team project focused on an appointment scheduling system for campus activities and services. My contribution focused on creating the flowchart and helping visualize the process and flow of the system before development.",
+                "An appointment scheduling system for campus activities and services. I helped map out the system flow and visualize how users and processes would move through the system before development.",
             contribution:
                 "System flowchart and process visualization.",
             technologies: [
@@ -63,25 +62,6 @@ function Projects() {
                 "JavaScript",
             ],
             image: campusConnect,
-            github: "",
-        },
-        {
-            type: "Team Project",
-            status: "Arduino / Queue System",
-            title: "Q-Track",
-            description:
-                "An Arduino-powered queue management system designed to make teller transactions more convenient and organized. The system uses student identification to track queue numbers and allows students to move around while waiting. Once their number is ready to be served, the system can notify them through their phone.",
-            contribution:
-                "Arduino programming and LED/light indicator implementation.",
-            technologies: [
-                "Arduino",
-                "RFID",
-                "Python",
-                "MySQL",
-                "Flask",
-                "IoT",
-            ],
-            image: qTrack,
             github: "",
         },
     ];
@@ -155,7 +135,7 @@ function Projects() {
                             group-hover:shadow-[0_20px_60px_rgba(0,0,0,0.45)]
                         "
                     >
-                        {/* Top browser-style bar */}
+                        {/* Browser-style header */}
                         <div
                             className="
                                 flex
@@ -170,7 +150,9 @@ function Projects() {
                         >
                             <div className="flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+
                                 <span className="w-1.5 h-1.5 rounded-full bg-[#444]"></span>
+
                                 <span className="w-1.5 h-1.5 rounded-full bg-[#444]"></span>
                             </div>
 
@@ -179,10 +161,12 @@ function Projects() {
                             </span>
                         </div>
 
+                        {/* PROJECT IMAGE */}
                         <div className="relative overflow-hidden">
                             <img
                                 src={project.image}
                                 alt={`${project.title} project preview`}
+                                loading="lazy"
                                 className={`
                                     block
                                     w-full
@@ -199,7 +183,7 @@ function Projects() {
                                 `}
                             />
 
-                            {/* Overlay */}
+                            {/* Image overlay */}
                             <div
                                 className="
                                     absolute
@@ -215,7 +199,7 @@ function Projects() {
                                 "
                             ></div>
 
-                            {/* Bottom red line */}
+                            {/* Red accent line */}
                             <div
                                 className="
                                     absolute
@@ -235,7 +219,7 @@ function Projects() {
                     {/* CONTENT */}
                     <div className="relative">
                         {/* META */}
-                        <div className="flex items-center gap-3 mb-5">
+                        <div className="flex flex-wrap items-center gap-3 mb-5">
                             <span className="w-8 h-px bg-red-500"></span>
 
                             <span className="text-xs font-semibold uppercase tracking-[0.22em] text-red-500">
@@ -298,7 +282,16 @@ function Projects() {
                                     group-hover:border-red-500
                                 "
                             >
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-600 mb-2">
+                                <p
+                                    className="
+                                        text-[10px]
+                                        font-semibold
+                                        uppercase
+                                        tracking-[0.22em]
+                                        text-gray-600
+                                        mb-2
+                                    "
+                                >
                                     My Contribution
                                 </p>
 
@@ -310,7 +303,16 @@ function Projects() {
 
                         {/* TECHNOLOGIES */}
                         <div className="mt-8">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-600 mb-3">
+                            <p
+                                className="
+                                    text-[10px]
+                                    font-semibold
+                                    uppercase
+                                    tracking-[0.22em]
+                                    text-gray-600
+                                    mb-3
+                                "
+                            >
                                 Technologies
                             </p>
 
@@ -345,7 +347,8 @@ function Projects() {
                                 <a
                                     href={project.github}
                                     target="_blank"
-                                    rel="noreferrer"
+                                    rel="noopener noreferrer"
+                                    aria-label={`View ${project.title} on GitHub`}
                                     className="
                                         group/link
                                         inline-flex
@@ -405,7 +408,7 @@ function Projects() {
                 scroll-mt-24
             "
         >
-            {/* Subtle background details */}
+            {/* Background details */}
             <div className="absolute top-0 left-0 w-full h-px bg-[#171717]"></div>
 
             <div className="absolute top-24 right-0 w-32 h-px bg-red-500/20"></div>
@@ -413,7 +416,6 @@ function Projects() {
             <div className="absolute bottom-32 left-0 w-24 h-px bg-red-500/10"></div>
 
             <div className="relative max-w-7xl mx-auto">
-
                 {/* HEADER */}
                 <div
                     className={`

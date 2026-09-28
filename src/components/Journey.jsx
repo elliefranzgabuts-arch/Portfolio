@@ -45,7 +45,7 @@ function Journey() {
             title: "Web Development",
             tag: "THIRD YEAR",
             description:
-                "Now in my third year, I started focusing more on web development. I'm learning HTML, CSS, JavaScript, Tailwind CSS, React, Node.js, Express.js, SQL/MySQL, Git, and GitHub while building projects and understanding how different parts of an application work together.",
+                "Now in my third year, I started focusing more on web development. I'm learning HTML, CSS, JavaScript, Tailwind CSS, Node.js, Express.js, SQL/MySQL, Git, and GitHub while building projects and understanding how different parts of an application work together.",
         },
         {
             year: "2026–2027",
@@ -209,9 +209,6 @@ function Journey() {
                                         bg-black
                                         border
                                         border-[#444]
-                                        transition-all
-                                        duration-300
-                                        group-hover:border-red-500
                                     "
                                 >
                                     <span
