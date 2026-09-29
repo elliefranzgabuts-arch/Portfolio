@@ -29,29 +29,37 @@ fs.mkdirSync(uploadsDirectory, {
     recursive: true,
 });
 
+/* =========================
+   CORS CONFIGURATION
+========================= */
+
 const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:3000",
     "https://elliefranzgabuts-arch.github.io",
-    "https://your-netlify-site.netlify.app",
+    "https://portfolio.elliefranzgabuts.workers.dev",
 ];
 
 app.use(
     cors({
         origin(origin, callback) {
-            if (
-                !origin ||
-                allowedOrigins.includes(origin)
-            ) {
-                callback(null, true);
-            } else {
-                callback(
-                    new Error(
-                        "Not allowed by CORS"
-                    )
-                );
+            // Allow requests with no Origin header
+            // such as server-to-server requests.
+            if (!origin) {
+                return callback(null, true);
             }
+
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            console.warn(
+                `Blocked CORS origin: ${origin}`
+            );
+
+            return callback(null, false);
         },
+
         methods: [
             "GET",
             "POST",
@@ -59,14 +67,21 @@ app.use(
             "DELETE",
             "OPTIONS",
         ],
+
         allowedHeaders: [
             "Content-Type",
             "Authorization",
         ],
+
+        credentials: true,
     })
 );
 
 app.use(express.json());
+
+/* =========================
+   STATIC UPLOADS
+========================= */
 
 app.use(
     "/uploads",
@@ -74,6 +89,10 @@ app.use(
         path.join(__dirname, "uploads")
     )
 );
+
+/* =========================
+   MYSQL CONNECTION
+========================= */
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
@@ -85,13 +104,19 @@ const pool = mysql.createPool({
     database:
         process.env.DB_NAME ||
         "personal_website",
+
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
+
     ssl: {
         rejectUnauthorized: false,
     },
 });
+
+/* =========================
+   MULTER CONFIGURATION
+========================= */
 
 const storage = multer.diskStorage({
     destination(req, file, cb) {
@@ -116,7 +141,8 @@ const storage = multer.diskStorage({
             .replace(/-+/g, "-")
             .toLowerCase();
 
-        const uniqueName = `${Date.now()}-${baseName}${extension}`;
+        const uniqueName =
+            `${Date.now()}-${baseName}${extension}`;
 
         cb(null, uniqueName);
     },
@@ -153,6 +179,10 @@ const upload = multer({
         }
     },
 });
+
+/* =========================
+   ADMIN AUTHENTICATION
+========================= */
 
 function authenticateAdmin(
     req,
@@ -203,6 +233,10 @@ function authenticateAdmin(
     }
 }
 
+/* =========================
+   PROJECT IMAGE DELETE
+========================= */
+
 function deleteProjectImage(
     imageUrl
 ) {
@@ -223,6 +257,10 @@ function deleteProjectImage(
     }
 }
 
+/* =========================
+   ROOT
+========================= */
+
 app.get("/", (req, res) => {
     res.json({
         success: true,
@@ -230,6 +268,10 @@ app.get("/", (req, res) => {
             "Backend is running!",
     });
 });
+
+/* =========================
+   HEALTH CHECK
+========================= */
 
 app.get(
     "/api/health",
@@ -261,6 +303,10 @@ app.get(
         }
     }
 );
+
+/* =========================
+   ADMIN LOGIN
+========================= */
 
 app.post(
     "/api/login",
@@ -364,6 +410,10 @@ app.post(
     }
 );
 
+/* =========================
+   ADMIN CHECK
+========================= */
+
 app.get(
     "/api/admin/check",
     authenticateAdmin,
@@ -374,6 +424,10 @@ app.get(
         });
     }
 );
+
+/* =========================
+   VISITORS
+========================= */
 
 app.post(
     "/api/visitors",
@@ -460,6 +514,10 @@ app.post(
         }
     }
 );
+
+/* =========================
+   ANALYTICS
+========================= */
 
 app.get(
     "/api/analytics",
@@ -554,6 +612,10 @@ app.get(
         }
     }
 );
+
+/* =========================
+   CONTACT
+========================= */
 
 app.post(
     "/api/contact",
@@ -677,6 +739,10 @@ app.delete(
     }
 );
 
+/* =========================
+   PROJECTS - PUBLIC
+========================= */
+
 app.get(
     "/api/projects",
     async (req, res) => {
@@ -704,6 +770,10 @@ app.get(
         }
     }
 );
+
+/* =========================
+   PROJECTS - CREATE
+========================= */
 
 app.post(
     "/api/projects",
@@ -791,6 +861,10 @@ app.post(
         }
     }
 );
+
+/* =========================
+   PROJECTS - UPDATE
+========================= */
 
 app.put(
     "/api/projects/:id",
@@ -921,6 +995,10 @@ app.put(
     }
 );
 
+/* =========================
+   PROJECTS - DELETE
+========================= */
+
 app.delete(
     "/api/projects/:id",
     authenticateAdmin,
@@ -990,6 +1068,10 @@ app.delete(
     }
 );
 
+/* =========================
+   CERTIFICATES - READ
+========================= */
+
 app.get(
     "/api/certificates",
     authenticateAdmin,
@@ -1019,6 +1101,10 @@ app.get(
         }
     }
 );
+
+/* =========================
+   CERTIFICATES - CREATE
+========================= */
 
 app.post(
     "/api/certificates",
@@ -1085,6 +1171,10 @@ app.post(
         }
     }
 );
+
+/* =========================
+   CERTIFICATES - UPDATE
+========================= */
 
 app.put(
     "/api/certificates/:id",
@@ -1167,6 +1257,10 @@ app.put(
     }
 );
 
+/* =========================
+   CERTIFICATES - DELETE
+========================= */
+
 app.delete(
     "/api/certificates/:id",
     authenticateAdmin,
@@ -1227,6 +1321,10 @@ app.delete(
     }
 );
 
+/* =========================
+   ADMIN ACTIVITY
+========================= */
+
 app.get(
     "/api/admin/activity",
     authenticateAdmin,
@@ -1255,6 +1353,10 @@ app.get(
         }
     }
 );
+
+/* =========================
+   ERROR HANDLER
+========================= */
 
 app.use(
     (
