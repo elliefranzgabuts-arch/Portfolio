@@ -1,209 +1,1565 @@
+import {
+    Activity,
+    ArrowLeft,
+    Award,
+    BarChart3,
+    FolderKanban,
+    ImagePlus,
+    LogOut,
+    Mail,
+    Pencil,
+    Plus,
+    RefreshCw,
+    Shield,
+    Trash2,
+    Upload,
+    Users,
+    X,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
-function Analytics() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [authChecking, setAuthChecking] = useState(true);
-    const [analytics, setAnalytics] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [status, setStatus] = useState("");
-    const [loginPassword, setLoginPassword] = useState("");
+const API_URL =
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:5000";
 
-    const API_URL = import.meta.env.VITE_API_URL;
+const DEMO_ANALYTICS = {
+    uniqueVisitors: 0,
+    totalVisits: 0,
+    totalMessages: 0,
+    totalProjects: 0,
+    totalCertificates: 0,
+    recentVisitors: [],
+    recentMessages: [],
+};
 
-    const apiFetch = useCallback(
-        async (endpoint, options = {}) => {
-            const token = sessionStorage.getItem("adminToken");
+function getImageUrl(imageUrl) {
+    if (!imageUrl) return "";
 
-            const headers = {
+    if (
+        imageUrl.startsWith("http://") ||
+        imageUrl.startsWith("https://")
+    ) {
+        return imageUrl;
+    }
+
+    return `${API_URL}${imageUrl}`;
+}
+
+function normalizeTechnologies(technologies) {
+    if (Array.isArray(technologies)) {
+        return technologies
+            .map((item) => String(item).trim())
+            .filter(Boolean);
+    }
+
+    if (typeof technologies === "string") {
+        try {
+            const parsed = JSON.parse(technologies);
+
+            if (Array.isArray(parsed)) {
+                return parsed
+                    .map((item) => String(item).trim())
+                    .filter(Boolean);
+            }
+        } catch {
+            return technologies
+                .split(",")
+                .map((item) => item.trim())
+                .filter(Boolean);
+        }
+    }
+
+    return [];
+}
+
+async function apiFetch(endpoint, options = {}) {
+    const response = await fetch(
+        `${API_URL}${endpoint}`,
+        {
+            ...options,
+            headers: {
                 "Content-Type": "application/json",
                 ...(options.headers || {}),
-                ...(token
-                    ? {
-                          Authorization: `Bearer ${token}`,
-                      }
-                    : {}),
-            };
-
-            const response = await fetch(`${API_URL}${endpoint}`, {
-                ...options,
-                headers,
-            });
-
-            let data;
-
-            try {
-                data = await response.json();
-            } catch {
-                data = {};
-            }
-
-            if (!response.ok) {
-                throw new Error(
-                    data.message || "Something went wrong."
-                );
-            }
-
-            return data;
-        },
-        [API_URL]
+            },
+        }
     );
 
-    const authenticatedFetch = useCallback(
-        async (endpoint, options = {}) => {
-            const token = sessionStorage.getItem("adminToken");
+    const data = await response
+        .json()
+        .catch(() => ({}));
 
-            const headers = {
-                ...(options.headers || {}),
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+                "Something went wrong."
+        );
+    }
+
+    return data;
+}
+
+async function authenticatedFetch(
+    endpoint,
+    token,
+    options = {}
+) {
+    return apiFetch(endpoint, {
+        ...options,
+        headers: {
+            ...(options.headers || {}),
+            Authorization: `Bearer ${token}`,
+        },
+    });
+}
+
+async function authenticatedMultipartFetch(
+    endpoint,
+    token,
+    formData,
+    method = "POST"
+) {
+    const response = await fetch(
+        `${API_URL}${endpoint}`,
+        {
+            method,
+            headers: {
                 Authorization: `Bearer ${token}`,
-            };
+            },
+            body: formData,
+        }
+    );
 
-            try {
-                return await apiFetch(endpoint, {
-                    ...options,
-                    headers,
-                });
-            } catch (error) {
-                if (
-                    error.message ===
-                    "Invalid or expired token."
-                ) {
-                    sessionStorage.removeItem("adminToken");
-                    setIsAuthenticated(false);
-                    setAnalytics(null);
+    const data = await response
+        .json()
+        .catch(() => ({}));
 
-                    throw new Error(
-                        "Your admin session is invalid or expired. Please log in again.",
-                        { cause: error }
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+                "Something went wrong."
+        );
+    }
+
+    return data;
+}
+
+function StatCard({
+    title,
+    value,
+    icon: Icon,
+    description,
+}) {
+    return (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition duration-300 hover:border-white/20 hover:bg-white/[0.055]">
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <p className="text-sm text-white/50">
+                        {title}
+                    </p>
+
+                    <h3 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+                        {value}
+                    </h3>
+
+                    {description && (
+                        <p className="mt-2 text-xs text-white/40">
+                            {description}
+                        </p>
+                    )}
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-white/[0.05] p-3">
+                    <Icon
+                        size={20}
+                        className="text-white/70"
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function SectionHeader({
+    icon: Icon,
+    title,
+    description,
+    action,
+}) {
+    return (
+        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+                    <Icon
+                        size={18}
+                        className="text-white/70"
+                    />
+                </div>
+
+                <div>
+                    <h2 className="text-lg font-semibold text-white">
+                        {title}
+                    </h2>
+
+                    {description && (
+                        <p className="mt-1 text-sm text-white/40">
+                            {description}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {action}
+        </div>
+    );
+}
+
+function VisitorsChart({ visitors }) {
+    const rows = Array.isArray(visitors)
+        ? visitors
+        : [];
+
+    if (rows.length === 0) {
+        return (
+            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025]">
+                <div className="text-center">
+                    <BarChart3
+                        size={28}
+                        className="mx-auto text-white/20"
+                    />
+
+                    <p className="mt-3 text-sm text-white/40">
+                        No visitor data yet.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    const grouped = {};
+
+    rows.forEach((visitor) => {
+        const date = visitor.visited_at
+            ? new Date(
+                  visitor.visited_at
+              ).toLocaleDateString(
+                  undefined,
+                  {
+                      month: "short",
+                      day: "numeric",
+                  }
+              )
+            : "Unknown";
+
+        grouped[date] =
+            (grouped[date] || 0) + 1;
+    });
+
+    const chartData = Object.entries(
+        grouped
+    ).reverse();
+
+    const maxValue = Math.max(
+        ...chartData.map(
+            ([, value]) => value
+        ),
+        1
+    );
+
+    return (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+            <div className="flex h-[220px] items-end gap-2 overflow-x-auto">
+                {chartData.map(
+                    ([date, value]) => {
+                        const height =
+                            Math.max(
+                                (value /
+                                    maxValue) *
+                                    100,
+                                6
+                            );
+
+                        return (
+                            <div
+                                key={date}
+                                className="flex min-w-[42px] flex-1 flex-col items-center justify-end gap-2"
+                            >
+                                <span className="text-xs text-white/50">
+                                    {value}
+                                </span>
+
+                                <div
+                                    className="w-full rounded-t-lg bg-white/20 transition hover:bg-white/30"
+                                    style={{
+                                        height: `${height}%`,
+                                    }}
+                                />
+
+                                <span className="whitespace-nowrap text-[10px] text-white/30">
+                                    {date}
+                                </span>
+                            </div>
+                        );
+                    }
+                )}
+            </div>
+        </div>
+    );
+}
+
+function TrafficChart({ visitors }) {
+    const rows = Array.isArray(visitors)
+        ? visitors
+        : [];
+
+    const pathCounts = {};
+
+    rows.forEach((visitor) => {
+        const visitorPath =
+            visitor.path || "/";
+
+        pathCounts[visitorPath] =
+            (pathCounts[visitorPath] || 0) +
+            1;
+    });
+
+    const traffic = Object.entries(
+        pathCounts
+    )
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6);
+
+    const total = traffic.reduce(
+        (sum, [, value]) => sum + value,
+        0
+    );
+
+    if (traffic.length === 0) {
+        return (
+            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025]">
+                <div className="text-center">
+                    <Activity
+                        size={28}
+                        className="mx-auto text-white/20"
+                    />
+
+                    <p className="mt-3 text-sm text-white/40">
+                        No traffic data yet.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+            {traffic.map(
+                ([pathName, count]) => {
+                    const percentage =
+                        total > 0
+                            ? Math.round(
+                                  (count /
+                                      total) *
+                                      100
+                              )
+                            : 0;
+
+                    return (
+                        <div
+                            key={pathName}
+                        >
+                            <div className="mb-2 flex items-center justify-between gap-4">
+                                <span className="truncate text-sm text-white/70">
+                                    {pathName}
+                                </span>
+
+                                <span className="text-xs text-white/40">
+                                    {count} visits
+                                </span>
+                            </div>
+
+                            <div className="h-2 overflow-hidden rounded-full bg-white/5">
+                                <div
+                                    className="h-full rounded-full bg-white/30"
+                                    style={{
+                                        width: `${percentage}%`,
+                                    }}
+                                />
+                            </div>
+                        </div>
                     );
                 }
-
-                throw error;
-            }
-        },
-        [apiFetch]
+            )}
+        </div>
     );
+}
 
-    const getMessageKey = (message, index) => {
-        if (
-            message.id !== undefined &&
-            message.id !== null
-        ) {
-            return `id-${message.id}`;
-        }
+function RecentVisitors({
+    visitors,
+}) {
+    const rows = Array.isArray(visitors)
+        ? visitors
+        : [];
 
-        return `${message.email || "unknown"}-${
-            message.created_at ||
-            message.createdAt ||
-            message.name ||
-            `message-${index}`
-        }`;
-    };
+    return (
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025]">
+            {rows.length === 0 ? (
+                <div className="p-8 text-center text-sm text-white/40">
+                    No visitors recorded yet.
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-[600px] text-left">
+                        <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-white/30">
+                            <tr>
+                                <th className="px-5 py-4">
+                                    Visitor
+                                </th>
 
-    const fetchAnalytics = useCallback(async () => {
-        setLoading(true);
-        setError("");
+                                <th className="px-5 py-4">
+                                    Path
+                                </th>
 
-        try {
-            const data = await authenticatedFetch(
-                "/api/analytics"
+                                <th className="px-5 py-4">
+                                    Time
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {rows.map(
+                                (
+                                    visitor,
+                                    index
+                                ) => (
+                                    <tr
+                                        key={
+                                            visitor.id ||
+                                            `${visitor.visitor_id}-${visitor.visited_at}-${index}`
+                                        }
+                                        className="border-b border-white/5 last:border-0"
+                                    >
+                                        <td className="px-5 py-4 text-sm text-white/70">
+                                            {visitor.visitor_id ||
+                                                "Unknown"}
+                                        </td>
+
+                                        <td className="px-5 py-4 text-sm text-white/50">
+                                            {visitor.path ||
+                                                "/"}
+                                        </td>
+
+                                        <td className="px-5 py-4 text-sm text-white/40">
+                                            {visitor.visited_at
+                                                ? new Date(
+                                                      visitor.visited_at
+                                                  ).toLocaleString()
+                                                : "Unknown"}
+                                        </td>
+                                    </tr>
+                                )
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function RecentMessages({
+    messages,
+}) {
+    const rows = Array.isArray(messages)
+        ? messages
+        : [];
+
+    return (
+        <div className="space-y-3">
+            {rows.length === 0 ? (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-8 text-center text-sm text-white/40">
+                    No messages yet.
+                </div>
+            ) : (
+                rows.map(
+                    (message, index) => (
+                        <div
+                            key={
+                                message.id ||
+                                `${message.email}-${message.created_at}-${index}`
+                            }
+                            className="rounded-2xl border border-white/10 bg-white/[0.025] p-5"
+                        >
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <h3 className="font-medium text-white">
+                                        {
+                                            message.name
+                                        }
+                                    </h3>
+
+                                    <p className="text-sm text-white/40">
+                                        {
+                                            message.email
+                                        }
+                                    </p>
+                                </div>
+
+                                <span className="text-xs text-white/30">
+                                    {message.created_at
+                                        ? new Date(
+                                              message.created_at
+                                          ).toLocaleString()
+                                        : ""}
+                                </span>
+                            </div>
+
+                            <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-white/60">
+                                {
+                                    message.message
+                                }
+                            </p>
+                        </div>
+                    )
+                )
+            )}
+        </div>
+    );
+}
+
+function TechnologyInput({
+    technologies,
+    setTechnologies,
+}) {
+    const [newTechnology, setNewTechnology] =
+        useState("");
+
+    const addTechnology = () => {
+        const value =
+            newTechnology.trim();
+
+        if (!value) return;
+
+        const exists =
+            technologies.some(
+                (technology) =>
+                    technology.toLowerCase() ===
+                    value.toLowerCase()
             );
 
-            if (data.success) {
-                setAnalytics(data);
-            } else {
-                setAnalytics(data);
-            }
-        } catch (error) {
-            console.error("Analytics error:", error);
-
-            if (
-                error.message ===
-                "Your admin session is invalid or expired. Please log in again."
-            ) {
-                setStatus(
-                    "Your admin session is invalid or expired. Please log in again."
-                );
-            } else {
-                setError(
-                    error.message ||
-                        "Unable to load analytics."
-                );
-            }
-        } finally {
-            setLoading(false);
+        if (exists) {
+            setNewTechnology("");
+            return;
         }
-    }, [authenticatedFetch]);
+
+        setTechnologies([
+            ...technologies,
+            value,
+        ]);
+
+        setNewTechnology("");
+    };
+
+    const removeTechnology = (
+        index
+    ) => {
+        setTechnologies(
+            technologies.filter(
+                (_, itemIndex) =>
+                    itemIndex !== index
+            )
+        );
+    };
+
+    const handleKeyDown = (
+        event
+    ) => {
+        if (
+            event.key === "Enter"
+        ) {
+            event.preventDefault();
+            addTechnology();
+        }
+    };
+
+    return (
+        <div>
+            <label className="mb-2 block text-sm text-white/60">
+                Technology Stack
+            </label>
+
+            <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                {technologies.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                        {technologies.map(
+                            (
+                                technology,
+                                index
+                            ) => (
+                                <span
+                                    key={`${technology}-${index}`}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-white/70"
+                                >
+                                    {
+                                        technology
+                                    }
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            removeTechnology(
+                                                index
+                                            )
+                                        }
+                                        className="rounded-full text-white/30 transition hover:text-white"
+                                        aria-label={`Remove ${technology}`}
+                                        title={`Remove ${technology}`}
+                                    >
+                                        <X
+                                            size={
+                                                13
+                                            }
+                                        />
+                                    </button>
+                                </span>
+                            )
+                        )}
+                    </div>
+                )}
+
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={
+                            newTechnology
+                        }
+                        onChange={(
+                            event
+                        ) =>
+                            setNewTechnology(
+                                event
+                                    .target
+                                    .value
+                            )
+                        }
+                        onKeyDown={
+                            handleKeyDown
+                        }
+                        placeholder="e.g. React, Node.js, MySQL"
+                        className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm text-white outline-none placeholder:text-white/20"
+                    />
+
+                    <button
+                        type="button"
+                        onClick={
+                            addTechnology
+                        }
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 transition hover:bg-white/5 hover:text-white"
+                    >
+                        <Plus
+                            size={14}
+                        />
+                        Add
+                    </button>
+                </div>
+            </div>
+
+            <p className="mt-2 text-xs text-white/25">
+                Add the technologies actually used in this project.
+            </p>
+        </div>
+    );
+}
+
+function ProjectsManager({
+    token,
+    onProjectsChange,
+}) {
+    const [projects, setProjects] =
+        useState([]);
+
+    const [loading, setLoading] =
+        useState(true);
+
+    const [saving, setSaving] =
+        useState(false);
+
+    const [error, setError] =
+        useState("");
+
+    const [success, setSuccess] =
+        useState("");
+
+    const [editingId, setEditingId] =
+        useState(null);
+
+    const [title, setTitle] =
+        useState("");
+
+    const [description, setDescription] =
+        useState("");
+
+    const [link, setLink] =
+        useState("");
+
+    const [technologies, setTechnologies] =
+        useState([]);
+
+    const [imageFile, setImageFile] =
+        useState(null);
+
+    const [imagePreview, setImagePreview] =
+        useState("");
+
+    const loadProjects =
+        useCallback(async () => {
+            try {
+                setLoading(true);
+                setError("");
+
+                const data =
+                    await authenticatedFetch(
+                        "/api/projects",
+                        token
+                    );
+
+                const loadedProjects =
+                    Array.isArray(
+                        data.projects
+                    )
+                        ? data.projects.map(
+                              (
+                                  project
+                              ) => ({
+                                  ...project,
+                                  technologies:
+                                      normalizeTechnologies(
+                                          project.technologies
+                                      ),
+                              })
+                          )
+                        : [];
+
+                setProjects(
+                    loadedProjects
+                );
+            } catch (err) {
+                setError(
+                    err.message ||
+                        "Unable to load projects."
+                );
+            } finally {
+                setLoading(false);
+            }
+        }, [token]);
 
     useEffect(() => {
-        let isMounted = true;
+        loadProjects();
+    }, [loadProjects]);
 
-        const checkSession = async () => {
-            const token =
-                sessionStorage.getItem("adminToken");
+    const resetForm = () => {
+        setEditingId(null);
+        setTitle("");
+        setDescription("");
+        setLink("");
+        setTechnologies([]);
+        setImageFile(null);
+        setImagePreview("");
+        setError("");
+    };
 
-            if (!token) {
-                if (isMounted) {
-                    setAuthChecking(false);
+    const handleImageChange = (
+        event
+    ) => {
+        const file =
+            event.target.files?.[0];
+
+        if (!file) return;
+
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/jpg",
+        ];
+
+        if (
+            !allowedTypes.includes(
+                file.type
+            )
+        ) {
+            setError(
+                "Only JPG, JPEG, PNG, and WEBP images are allowed."
+            );
+
+            event.target.value = "";
+            return;
+        }
+
+        if (
+            file.size >
+            20 * 1024 * 1024
+        ) {
+            setError(
+                "Image is too large. Maximum size is 20MB."
+            );
+
+            event.target.value = "";
+            return;
+        }
+
+        setError("");
+        setImageFile(file);
+
+        const reader =
+            new FileReader();
+
+        reader.onload = () => {
+            setImagePreview(
+                reader.result
+            );
+        };
+
+        reader.readAsDataURL(file);
+    };
+
+    const startEdit = (project) => {
+        setEditingId(project.id);
+        setTitle(project.title || "");
+        setDescription(
+            project.description || ""
+        );
+        setLink(project.link || "");
+
+        setTechnologies(
+            normalizeTechnologies(
+                project.technologies
+            )
+        );
+
+        setImageFile(null);
+        setError("");
+        setSuccess("");
+
+        setImagePreview(
+            project.image_url
+                ? getImageUrl(
+                      project.image_url
+                  )
+                : ""
+        );
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
+    };
+
+    const handleSubmit = async (
+        event
+    ) => {
+        event.preventDefault();
+
+        if (
+            !title.trim() ||
+            !description.trim()
+        ) {
+            setError(
+                "Title and description are required."
+            );
+            return;
+        }
+
+        try {
+            setSaving(true);
+            setError("");
+            setSuccess("");
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                "title",
+                title.trim()
+            );
+
+            formData.append(
+                "description",
+                description.trim()
+            );
+
+            formData.append(
+                "link",
+                link.trim()
+            );
+
+            formData.append(
+                "technologies",
+                JSON.stringify(
+                    technologies
+                )
+            );
+
+            if (imageFile) {
+                formData.append(
+                    "image",
+                    imageFile
+                );
+            }
+
+            const endpoint = editingId
+                ? `/api/projects/${editingId}`
+                : "/api/projects";
+
+            const method = editingId
+                ? "PUT"
+                : "POST";
+
+            await authenticatedMultipartFetch(
+                endpoint,
+                token,
+                formData,
+                method
+            );
+
+            setSuccess(
+                editingId
+                    ? "Project updated successfully."
+                    : "Project created successfully."
+            );
+
+            resetForm();
+
+            await loadProjects();
+
+            if (onProjectsChange) {
+                onProjectsChange();
+            }
+        } catch (err) {
+            setError(
+                err.message ||
+                    "Unable to save project."
+            );
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDelete = async (
+        project
+    ) => {
+        const confirmed =
+            window.confirm(
+                `Delete "${project.title}"? This cannot be undone.`
+            );
+
+        if (!confirmed) return;
+
+        try {
+            setError("");
+            setSuccess("");
+
+            await authenticatedFetch(
+                `/api/projects/${project.id}`,
+                token,
+                {
+                    method: "DELETE",
                 }
+            );
 
+            setSuccess(
+                "Project deleted successfully."
+            );
+
+            if (
+                editingId ===
+                project.id
+            ) {
+                resetForm();
+            }
+
+            await loadProjects();
+
+            if (onProjectsChange) {
+                onProjectsChange();
+            }
+        } catch (err) {
+            setError(
+                err.message ||
+                    "Unable to delete project."
+            );
+        }
+    };
+
+    return (
+        <div className="space-y-8">
+            <SectionHeader
+                icon={FolderKanban}
+                title="Project Manager"
+                description="Create, update, and manage projects displayed on your portfolio."
+                action={
+                    editingId ? (
+                        <button
+                            type="button"
+                            onClick={
+                                resetForm
+                            }
+                            className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm text-white/60 transition hover:bg-white/5 hover:text-white"
+                        >
+                            <X
+                                size={16}
+                            />
+                            Cancel Edit
+                        </button>
+                    ) : null
+                }
+            />
+
+            {(error || success) && (
+                <div
+                    className={`rounded-xl border px-4 py-3 text-sm ${
+                        error
+                            ? "border-red-400/20 bg-red-400/5 text-red-300"
+                            : "border-emerald-400/20 bg-emerald-400/5 text-emerald-300"
+                    }`}
+                >
+                    {error || success}
+                </div>
+            )}
+
+            <form
+                onSubmit={
+                    handleSubmit
+                }
+                className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6"
+            >
+                <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+                    <div className="space-y-5">
+                        <div>
+                            <label className="mb-2 block text-sm text-white/60">
+                                Project Title
+                            </label>
+
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(event) =>
+                                    setTitle(
+                                        event
+                                            .target
+                                            .value
+                                    )
+                                }
+                                placeholder="My Project"
+                                className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-sm text-white/60">
+                                Description
+                            </label>
+
+                            <textarea
+                                value={
+                                    description
+                                }
+                                onChange={(
+                                    event
+                                ) =>
+                                    setDescription(
+                                        event
+                                            .target
+                                            .value
+                                    )
+                                }
+                                placeholder="Describe your project..."
+                                rows={6}
+                                className="w-full resize-none rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
+                            />
+                        </div>
+
+                        <TechnologyInput
+                            technologies={
+                                technologies
+                            }
+                            setTechnologies={
+                                setTechnologies
+                            }
+                        />
+
+                        <div>
+                            <label className="mb-2 block text-sm text-white/60">
+                                Project Link
+                            </label>
+
+                            <input
+                                type="url"
+                                value={link}
+                                onChange={(event) =>
+                                    setLink(
+                                        event
+                                            .target
+                                            .value
+                                    )
+                                }
+                                placeholder="https://github.com/..."
+                                className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="mb-2 block text-sm text-white/60">
+                            Project Image
+                        </label>
+
+                        <label className="group relative flex min-h-[240px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/15 bg-black/20 transition hover:border-white/30 hover:bg-white/[0.025]">
+                            {imagePreview ? (
+                                <>
+                                    <img
+                                        src={
+                                            imagePreview
+                                        }
+                                        alt="Project preview"
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                    />
+
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition group-hover:opacity-100">
+                                        <div className="text-center">
+                                            <Upload
+                                                size={
+                                                    24
+                                                }
+                                                className="mx-auto text-white"
+                                            />
+
+                                            <p className="mt-2 text-sm text-white">
+                                                Change image
+                                            </p>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <ImagePlus
+                                        size={
+                                            32
+                                        }
+                                        className="text-white/25"
+                                    />
+
+                                    <p className="mt-3 text-sm text-white/60">
+                                        Upload project image
+                                    </p>
+
+                                    <p className="mt-1 text-center text-xs text-white/30">
+                                        JPG, JPEG,
+                                        PNG or
+                                        WEBP ·
+                                        Maximum
+                                        20MB
+                                    </p>
+                                </>
+                            )}
+
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/jpg"
+                                onChange={
+                                    handleImageChange
+                                }
+                                className="hidden"
+                            />
+                        </label>
+
+                        {imageFile && (
+                            <p className="mt-2 truncate text-xs text-white/30">
+                                Selected:{" "}
+                                {
+                                    imageFile.name
+                                }
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                    {editingId && (
+                        <button
+                            type="button"
+                            onClick={
+                                resetForm
+                            }
+                            className="rounded-xl border border-white/10 px-5 py-3 text-sm text-white/60 transition hover:bg-white/5 hover:text-white"
+                        >
+                            Cancel
+                        </button>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={saving}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {saving ? (
+                            <>
+                                <RefreshCw
+                                    size={
+                                        16
+                                    }
+                                    className="animate-spin"
+                                />
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                {editingId ? (
+                                    <Pencil
+                                        size={
+                                            16
+                                        }
+                                    />
+                                ) : (
+                                    <Plus
+                                        size={
+                                            16
+                                        }
+                                    />
+                                )}
+
+                                {editingId
+                                    ? "Update Project"
+                                    : "Add Project"}
+                            </>
+                        )}
+                    </button>
+                </div>
+            </form>
+
+            <div>
+                <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-white/70">
+                        Existing Projects
+                    </h3>
+
+                    <span className="text-xs text-white/30">
+                        {projects.length}{" "}
+                        total
+                    </span>
+                </div>
+
+                {loading ? (
+                    <div className="flex min-h-[160px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025]">
+                        <RefreshCw
+                            size={22}
+                            className="animate-spin text-white/30"
+                        />
+                    </div>
+                ) : projects.length ===
+                  0 ? (
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-8 text-center">
+                        <FolderKanban
+                            size={30}
+                            className="mx-auto text-white/20"
+                        />
+
+                        <p className="mt-3 text-sm text-white/40">
+                            No projects yet.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {projects.map(
+                            (project) => (
+                                <div
+                                    key={
+                                        project.id
+                                    }
+                                    className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025]"
+                                >
+                                    <div className="relative aspect-video overflow-hidden bg-black/20">
+                                        {project.image_url ? (
+                                            <img
+                                                src={getImageUrl(
+                                                    project.image_url
+                                                )}
+                                                alt={
+                                                    project.title
+                                                }
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full items-center justify-center">
+                                                <ImagePlus
+                                                    size={
+                                                        30
+                                                    }
+                                                    className="text-white/15"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="p-4">
+                                        <h4 className="font-medium text-white">
+                                            {
+                                                project.title
+                                            }
+                                        </h4>
+
+                                        <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/40">
+                                            {
+                                                project.description
+                                            }
+                                        </p>
+
+                                        {project.technologies?.length >
+                                            0 && (
+                                            <div className="mt-4 flex flex-wrap gap-1.5">
+                                                {project.technologies.map(
+                                                    (
+                                                        technology,
+                                                        index
+                                                    ) => (
+                                                        <span
+                                                            key={`${project.id}-${technology}-${index}`}
+                                                            className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/50"
+                                                        >
+                                                            {
+                                                                technology
+                                                            }
+                                                        </span>
+                                                    )
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="mt-4 flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    startEdit(
+                                                        project
+                                                    )
+                                                }
+                                                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-white/60 transition hover:bg-white/5 hover:text-white"
+                                            >
+                                                <Pencil
+                                                    size={
+                                                        15
+                                                    }
+                                                />
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleDelete(
+                                                        project
+                                                    )
+                                                }
+                                                className="inline-flex items-center justify-center rounded-xl border border-red-400/10 px-3 py-2.5 text-red-300/70 transition hover:bg-red-400/5 hover:text-red-300"
+                                                aria-label={`Delete ${project.title}`}
+                                                title={`Delete ${project.title}`}
+                                            >
+                                                <Trash2
+                                                    size={
+                                                        15
+                                                    }
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function Analytics() {
+    const [token, setToken] =
+        useState(() =>
+            sessionStorage.getItem(
+                "adminToken"
+            )
+        );
+
+    const [authenticated, setAuthenticated] =
+        useState(false);
+
+    const [checkingAuth, setCheckingAuth] =
+        useState(true);
+
+    const [password, setPassword] =
+        useState("");
+
+    const [loginError, setLoginError] =
+        useState("");
+
+    const [loggingIn, setLoggingIn] =
+        useState(false);
+
+    const [analytics, setAnalytics] =
+        useState(DEMO_ANALYTICS);
+
+    const [loadingAnalytics, setLoadingAnalytics] =
+        useState(false);
+
+    const [refreshing, setRefreshing] =
+        useState(false);
+
+    const [activeTab, setActiveTab] =
+        useState("analytics");
+
+    const verifySession =
+        useCallback(async () => {
+            if (!token) {
+                setAuthenticated(false);
+                setCheckingAuth(false);
                 return;
             }
 
-            if (isMounted) {
-                setStatus("Checking admin session...");
-            }
-
             try {
-                await fetchAnalytics();
-
-                if (isMounted) {
-                    setIsAuthenticated(true);
-                }
-            } catch (error) {
-                console.error(
-                    "Session validation error:",
-                    error
+                await authenticatedFetch(
+                    "/api/admin/check",
+                    token
                 );
 
-                if (isMounted) {
-                    sessionStorage.removeItem(
-                        "adminToken"
-                    );
-                    setIsAuthenticated(false);
-                }
+                setAuthenticated(true);
+            } catch {
+                sessionStorage.removeItem(
+                    "adminToken"
+                );
+
+                setToken(null);
+                setAuthenticated(false);
             } finally {
-                if (isMounted) {
-                    setAuthChecking(false);
-                }
+                setCheckingAuth(false);
             }
-        };
+        }, [token]);
 
-        checkSession();
+    useEffect(() => {
+        verifySession();
+    }, [verifySession]);
 
-        return () => {
-            isMounted = false;
-        };
-    }, [fetchAnalytics]);
+    const loadAnalytics =
+        useCallback(
+            async (
+                showRefresh = false
+            ) => {
+                if (!token) return;
 
-    const handleLogin = async (event) => {
+                try {
+                    if (showRefresh) {
+                        setRefreshing(
+                            true
+                        );
+                    } else {
+                        setLoadingAnalytics(
+                            true
+                        );
+                    }
+
+                    const data =
+                        await authenticatedFetch(
+                            "/api/analytics",
+                            token
+                        );
+
+                    if (
+                        data?.analytics
+                    ) {
+                        setAnalytics(
+                            data.analytics
+                        );
+                    }
+                } catch (error) {
+                    const message =
+                        error.message?.toLowerCase() ||
+                        "";
+
+                    if (
+                        message.includes(
+                            "token"
+                        ) ||
+                        message.includes(
+                            "authentication"
+                        )
+                    ) {
+                        sessionStorage.removeItem(
+                            "adminToken"
+                        );
+
+                        setToken(null);
+                        setAuthenticated(
+                            false
+                        );
+                    }
+                } finally {
+                    setLoadingAnalytics(
+                        false
+                    );
+                    setRefreshing(false);
+                }
+            },
+            [token]
+        );
+
+    useEffect(() => {
+        if (
+            authenticated &&
+            activeTab ===
+                "analytics"
+        ) {
+            loadAnalytics();
+        }
+    }, [
+        authenticated,
+        activeTab,
+        loadAnalytics,
+    ]);
+
+    const handleLogin = async (
+        event
+    ) => {
         event.preventDefault();
 
-        setLoading(true);
-        setError("");
-        setStatus("Logging in...");
+        if (!password.trim()) {
+            setLoginError(
+                "Password is required."
+            );
+            return;
+        }
 
         try {
-            const data = await apiFetch("/api/login", {
-                method: "POST",
-                body: JSON.stringify({
-                    password: loginPassword,
-                }),
-            });
+            setLoggingIn(true);
+            setLoginError("");
 
-            if (!data.success || !data.token) {
+            const data =
+                await apiFetch(
+                    "/api/login",
+                    {
+                        method: "POST",
+                        body: JSON.stringify(
+                            {
+                                password,
+                            }
+                        ),
+                    }
+                );
+
+            if (
+                !data.success ||
+                !data.token
+            ) {
                 throw new Error(
-                    data.message || "Invalid password."
+                    data.message ||
+                        "Login failed."
                 );
             }
 
@@ -212,333 +1568,463 @@ function Analytics() {
                 data.token
             );
 
-            setLoginPassword("");
-            setIsAuthenticated(true);
-            setStatus("Login successful.");
-
-            await fetchAnalytics();
+            setToken(data.token);
+            setAuthenticated(true);
+            setPassword("");
         } catch (error) {
-            console.error("Login error:", error);
-
-            setError(
+            setLoginError(
                 error.message ||
-                    "Unable to log in. Please try again."
+                    "Invalid password."
             );
-            setStatus("");
         } finally {
-            setLoading(false);
+            setLoggingIn(false);
         }
     };
 
     const handleLogout = () => {
-        sessionStorage.removeItem("adminToken");
+        sessionStorage.removeItem(
+            "adminToken"
+        );
 
-        setIsAuthenticated(false);
-        setAnalytics(null);
-        setError("");
-        setStatus("Logged out.");
+        setToken(null);
+        setAuthenticated(false);
+        setAnalytics(
+            DEMO_ANALYTICS
+        );
     };
 
-    const handleRefresh = async () => {
-        setStatus("Refreshing analytics...");
-        setError("");
+    const refreshDashboard =
+        async () => {
+            if (!token) return;
 
-        await fetchAnalytics();
+            await loadAnalytics(true);
+        };
 
-        setStatus("Analytics updated.");
-    };
-
-    if (authChecking) {
+    if (checkingAuth) {
         return (
-            <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+            <div className="flex min-h-screen items-center justify-center bg-black text-white">
                 <div className="text-center">
-                    <p className="text-sm text-gray-400">
-                        Checking admin session...
+                    <RefreshCw
+                        size={28}
+                        className="mx-auto animate-spin text-white/30"
+                    />
+
+                    <p className="mt-4 text-sm text-white/40">
+                        Checking secure
+                        session...
                     </p>
                 </div>
-            </main>
+            </div>
         );
     }
 
-    if (!isAuthenticated) {
+    if (!authenticated) {
         return (
-            <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+            <div className="flex min-h-screen items-center justify-center bg-black px-5 text-white">
                 <div className="w-full max-w-md">
-                    <div className="border border-[#202020] bg-[#080808] p-8">
-                        <div className="mb-8">
-                            <p className="text-xs uppercase tracking-[0.2em] text-red-500">
-                                Private Area
-                            </p>
-
-                            <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-                                Admin Login
-                            </h1>
-
-                            <p className="mt-3 text-sm leading-6 text-gray-500">
-                                Enter your admin password to
-                                access the analytics dashboard.
-                            </p>
+                    <div className="mb-8 text-center">
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+                            <Shield
+                                size={
+                                    24
+                                }
+                                className="text-white/70"
+                            />
                         </div>
 
-                        <form
-                            onSubmit={handleLogin}
-                            className="space-y-5"
-                        >
-                            <div>
-                                <label
-                                    htmlFor="admin-password"
-                                    className="mb-2 block text-xs uppercase tracking-[0.15em] text-gray-500"
-                                >
-                                    Password
-                                </label>
+                        <h1 className="mt-5 text-2xl font-semibold tracking-tight">
+                            Private Area
+                        </h1>
 
-                                <input
-                                    id="admin-password"
-                                    type="password"
-                                    value={loginPassword}
-                                    onChange={(event) =>
-                                        setLoginPassword(
-                                            event.target.value
-                                        )
-                                    }
-                                    required
-                                    autoComplete="current-password"
-                                    className="w-full border border-[#252525] bg-black px-4 py-3 text-sm text-white outline-none transition-colors focus:border-red-500"
-                                    placeholder="Enter password"
-                                />
-                            </div>
-
-                            {error && (
-                                <p
-                                    role="alert"
-                                    className="text-sm text-red-400"
-                                >
-                                    {error}
-                                </p>
-                            )}
-
-                            {status && (
-                                <p
-                                    role="status"
-                                    aria-live="polite"
-                                    className="text-sm text-gray-500"
-                                >
-                                    {status}
-                                </p>
-                            )}
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-white px-5 py-3 text-sm font-medium text-black transition-colors duration-300 hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {loading
-                                    ? "Logging in..."
-                                    : "Enter Dashboard"}
-                            </button>
-                        </form>
+                        <p className="mt-2 text-sm text-white/40">
+                            Enter your admin
+                            password to
+                            continue.
+                        </p>
                     </div>
+
+                    <form
+                        onSubmit={
+                            handleLogin
+                        }
+                        className="rounded-2xl border border-white/10 bg-white/[0.035] p-6"
+                    >
+                        {loginError && (
+                            <div className="mb-5 rounded-xl border border-red-400/20 bg-red-400/5 px-4 py-3 text-sm text-red-300">
+                                {
+                                    loginError
+                                }
+                            </div>
+                        )}
+
+                        <label className="mb-2 block text-sm text-white/60">
+                            Admin Password
+                        </label>
+
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(
+                                event
+                            ) =>
+                                setPassword(
+                                    event
+                                        .target
+                                        .value
+                                )
+                            }
+                            placeholder="Enter password"
+                            autoFocus
+                            className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
+                        />
+
+                        <button
+                            type="submit"
+                            disabled={
+                                loggingIn
+                            }
+                            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {loggingIn ? (
+                                <>
+                                    <RefreshCw
+                                        size={
+                                            16
+                                        }
+                                        className="animate-spin"
+                                    />
+                                    Signing
+                                    in...
+                                </>
+                            ) : (
+                                <>
+                                    <Shield
+                                        size={
+                                            16
+                                        }
+                                    />
+                                    Enter
+                                    Dashboard
+                                </>
+                            )}
+                        </button>
+                    </form>
+
+                    <p className="mt-6 text-center text-xs text-white/20">
+                        Protected admin
+                        dashboard
+                    </p>
                 </div>
-            </main>
+            </div>
         );
     }
 
     return (
-        <main className="min-h-screen bg-black text-white px-6 py-10 md:px-10">
-            <div className="mx-auto max-w-6xl">
-                <header className="flex flex-col gap-5 border-b border-[#181818] pb-8 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-red-500">
-                            Private Area
-                        </p>
+        <div className="min-h-screen bg-black text-white">
+            <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl">
+                <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 lg:px-8">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
+                            <Activity
+                                size={
+                                    18
+                                }
+                                className="text-white/70"
+                            />
+                        </div>
 
-                        <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-                            Analytics Dashboard
-                        </h1>
+                        <div>
+                            <h1 className="text-sm font-semibold">
+                                Admin
+                                Dashboard
+                            </h1>
 
-                        <p className="mt-3 text-sm text-gray-500">
-                            Overview of visitors, messages,
-                            and website activity.
-                        </p>
+                            <p className="text-xs text-white/30">
+                                Portfolio
+                                management
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            onClick={handleRefresh}
-                            disabled={loading}
-                            className="border border-[#252525] px-4 py-2 text-xs uppercase tracking-[0.12em] text-gray-300 transition-colors hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={
+                                refreshDashboard
+                            }
+                            disabled={
+                                refreshing
+                            }
+                            aria-label="Refresh dashboard"
+                            className="rounded-xl border border-white/10 p-2.5 text-white/50 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
                         >
-                            {loading
-                                ? "Refreshing..."
-                                : "Refresh"}
+                            <RefreshCw
+                                size={
+                                    17
+                                }
+                                className={
+                                    refreshing
+                                        ? "animate-spin"
+                                        : ""
+                                }
+                            />
                         </button>
 
                         <button
                             type="button"
-                            onClick={handleLogout}
-                            className="border border-[#252525] px-4 py-2 text-xs uppercase tracking-[0.12em] text-gray-500 transition-colors hover:border-red-500 hover:text-red-400"
+                            onClick={
+                                handleLogout
+                            }
+                            className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-white/50 transition hover:bg-white/5 hover:text-white"
                         >
-                            Logout
+                            <LogOut
+                                size={
+                                    16
+                                }
+                            />
+
+                            <span className="hidden sm:inline">
+                                Logout
+                            </span>
                         </button>
                     </div>
-                </header>
+                </div>
+            </header>
 
-                {status && (
-                    <p
-                        role="status"
-                        aria-live="polite"
-                        className="mt-5 text-sm text-gray-500"
-                    >
-                        {status}
+            <main className="mx-auto max-w-7xl px-5 py-8 lg:px-8 lg:py-10">
+                <div className="mb-8">
+                    <p className="text-xs uppercase tracking-[0.25em] text-white/30">
+                        Control Center
                     </p>
-                )}
 
-                {error && (
-                    <p
-                        role="alert"
-                        className="mt-5 text-sm text-red-400"
-                    >
-                        {error}
+                    <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+                        Welcome back.
+                    </h2>
+
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">
+                        Monitor your portfolio,
+                        manage projects, and
+                        review activity from
+                        one place.
                     </p>
-                )}
+                </div>
 
-                {analytics && (
-                    <div className="mt-10 space-y-10">
-                        <section>
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                <div className="border border-[#181818] bg-[#080808] p-6">
-                                    <p className="text-xs uppercase tracking-[0.15em] text-gray-600">
-                                        Total Visitors
-                                    </p>
+                <div className="mb-8 flex gap-2 overflow-x-auto border-b border-white/10">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setActiveTab(
+                                "analytics"
+                            )
+                        }
+                        className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm transition ${
+                            activeTab ===
+                            "analytics"
+                                ? "border-white text-white"
+                                : "border-transparent text-white/40 hover:text-white/70"
+                        }`}
+                    >
+                        <BarChart3
+                            size={
+                                16
+                            }
+                        />
+                        Analytics
+                    </button>
 
-                                    <p className="mt-3 text-3xl font-semibold">
-                                        {analytics.totalVisitors ??
-                                            analytics.visitorCount ??
-                                            0}
-                                    </p>
-                                </div>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setActiveTab(
+                                "projects"
+                            )
+                        }
+                        className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm transition ${
+                            activeTab ===
+                            "projects"
+                                ? "border-white text-white"
+                                : "border-transparent text-white/40 hover:text-white/70"
+                        }`}
+                    >
+                        <FolderKanban
+                            size={
+                                16
+                            }
+                        />
+                        Projects
+                    </button>
 
-                                <div className="border border-[#181818] bg-[#080808] p-6">
-                                    <p className="text-xs uppercase tracking-[0.15em] text-gray-600">
-                                        Messages
-                                    </p>
+                    <button
+                        type="button"
+                        disabled
+                        className="inline-flex shrink-0 cursor-not-allowed items-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm text-white/20"
+                    >
+                        <Award
+                            size={
+                                16
+                            }
+                        />
+                        Certificates
 
-                                    <p className="mt-3 text-3xl font-semibold">
-                                        {analytics.totalMessages ??
-                                            analytics.messageCount ??
-                                            0}
-                                    </p>
-                                </div>
+                        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[9px] uppercase tracking-wider">
+                            Soon
+                        </span>
+                    </button>
+                </div>
 
-                                <div className="border border-[#181818] bg-[#080808] p-6">
-                                    <p className="text-xs uppercase tracking-[0.15em] text-gray-600">
-                                        Newest Visitor
-                                    </p>
+                {activeTab ===
+                    "analytics" && (
+                    <div className="space-y-8">
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                            <StatCard
+                                title="Unique Visitors"
+                                value={
+                                    analytics.uniqueVisitors ||
+                                    0
+                                }
+                                icon={
+                                    Users
+                                }
+                                description="Distinct visitors recorded"
+                            />
 
-                                    <p className="mt-3 text-sm text-gray-300">
-                                        {analytics.latestVisitor ??
-                                            "—"}
-                                    </p>
-                                </div>
+                            <StatCard
+                                title="Total Visits"
+                                value={
+                                    analytics.totalVisits ||
+                                    0
+                                }
+                                icon={
+                                    Activity
+                                }
+                                description="All recorded visits"
+                            />
 
-                                <div className="border border-[#181818] bg-[#080808] p-6">
-                                    <p className="text-xs uppercase tracking-[0.15em] text-gray-600">
-                                        Status
-                                    </p>
+                            <StatCard
+                                title="Messages"
+                                value={
+                                    analytics.totalMessages ||
+                                    0
+                                }
+                                icon={
+                                    Mail
+                                }
+                                description="Contact submissions"
+                            />
 
-                                    <p className="mt-3 text-sm text-green-400">
-                                        Connected
-                                    </p>
-                                </div>
+                            <StatCard
+                                title="Projects"
+                                value={
+                                    analytics.totalProjects ||
+                                    0
+                                }
+                                icon={
+                                    FolderKanban
+                                }
+                                description="Portfolio projects"
+                            />
+
+                            <StatCard
+                                title="Certificates"
+                                value={
+                                    analytics.totalCertificates ||
+                                    0
+                                }
+                                icon={
+                                    Award
+                                }
+                                description="Certificates stored"
+                            />
+                        </div>
+
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <div>
+                                <SectionHeader
+                                    icon={
+                                        BarChart3
+                                    }
+                                    title="Visitor Activity"
+                                    description="Recent visitor activity"
+                                />
+
+                                <VisitorsChart
+                                    visitors={
+                                        analytics.recentVisitors
+                                    }
+                                />
                             </div>
-                        </section>
 
-                        <section>
-                            <div className="mb-5">
-                                <h2 className="text-xl font-semibold">
-                                    Recent Messages
-                                </h2>
+                            <div>
+                                <SectionHeader
+                                    icon={
+                                        Activity
+                                    }
+                                    title="Traffic"
+                                    description="Most visited paths"
+                                />
 
-                                <p className="mt-2 text-sm text-gray-600">
-                                    Messages submitted through
-                                    your portfolio contact form.
-                                </p>
+                                <TrafficChart
+                                    visitors={
+                                        analytics.recentVisitors
+                                    }
+                                />
                             </div>
+                        </div>
 
-                            <div className="overflow-x-auto border border-[#181818]">
-                                {Array.isArray(
-                                    analytics.messages
-                                ) &&
-                                analytics.messages.length > 0 ? (
-                                    <table className="w-full min-w-[700px] text-left">
-                                        <thead className="border-b border-[#181818] bg-[#080808]">
-                                            <tr>
-                                                <th className="px-5 py-4 text-xs uppercase tracking-[0.12em] text-gray-600">
-                                                    Name
-                                                </th>
+                        <div>
+                            <SectionHeader
+                                icon={
+                                    Users
+                                }
+                                title="Recent Visitors"
+                                description="Latest recorded visits to your portfolio"
+                            />
 
-                                                <th className="px-5 py-4 text-xs uppercase tracking-[0.12em] text-gray-600">
-                                                    Email
-                                                </th>
+                            <RecentVisitors
+                                visitors={
+                                    analytics.recentVisitors
+                                }
+                            />
+                        </div>
 
-                                                <th className="px-5 py-4 text-xs uppercase tracking-[0.12em] text-gray-600">
-                                                    Message
-                                                </th>
+                        <div>
+                            <SectionHeader
+                                icon={
+                                    Mail
+                                }
+                                title="Recent Messages"
+                                description="Latest messages received through your contact form"
+                            />
 
-                                                <th className="px-5 py-4 text-xs uppercase tracking-[0.12em] text-gray-600">
-                                                    Date
-                                                </th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody>
-                                            {analytics.messages.map(
-                                                (message, index) => (
-                                                    <tr
-                                                        key={getMessageKey(
-                                                            message,
-                                                            index
-                                                        )}
-                                                        className="border-b border-[#111] last:border-b-0"
-                                                    >
-                                                        <td className="px-5 py-4 text-sm text-gray-300">
-                                                            {message.name ||
-                                                                "—"}
-                                                        </td>
-
-                                                        <td className="px-5 py-4 text-sm text-gray-400">
-                                                            {message.email ||
-                                                                "—"}
-                                                        </td>
-
-                                                        <td className="max-w-md px-5 py-4 text-sm leading-6 text-gray-400">
-                                                            {message.message ||
-                                                                "—"}
-                                                        </td>
-
-                                                        <td className="whitespace-nowrap px-5 py-4 text-xs text-gray-600">
-                                                            {message.created_at ||
-                                                                message.createdAt ||
-                                                                "—"}
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            )}
-                                        </tbody>
-                                    </table>
-                                ) : (
-                                    <div className="px-6 py-10 text-center text-sm text-gray-600">
-                                        No messages yet.
-                                    </div>
-                                )}
-                            </div>
-                        </section>
+                            <RecentMessages
+                                messages={
+                                    analytics.recentMessages
+                                }
+                            />
+                        </div>
                     </div>
                 )}
-            </div>
-        </main>
+
+                {activeTab ===
+                    "projects" && (
+                    <ProjectsManager
+                        token={token}
+                        onProjectsChange={() =>
+                            loadAnalytics()
+                        }
+                    />
+                )}
+            </main>
+
+            <a
+                href="/"
+                className="fixed bottom-5 left-5 hidden items-center gap-2 rounded-full border border-white/10 bg-black/80 px-4 py-2 text-xs text-white/30 backdrop-blur transition hover:text-white/70 sm:flex"
+            >
+                <ArrowLeft
+                    size={14}
+                />
+                Back to portfolio
+            </a>
+        </div>
     );
 }
-
-export default Analytics;

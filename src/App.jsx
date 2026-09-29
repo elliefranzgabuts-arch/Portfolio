@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Link, Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import Home from "./components/Home";
@@ -15,12 +15,10 @@ import Analytics from "./components/Analytics";
 function Portfolio() {
     const [activeSection, setActiveSection] = useState("home");
 
-    // Page title
     useEffect(() => {
         document.title = "Ellie Franz | Portfolio";
     }, []);
 
-    // Track active section while scrolling
     useEffect(() => {
         const sections = document.querySelectorAll("section[id]");
 
@@ -92,6 +90,16 @@ function Portfolio() {
             </main>
 
             <Footer />
+
+            <Link
+                to="/admin"
+                aria-label="Admin"
+                className="fixed bottom-2 right-2 z-[100] flex h-7 w-7 items-center justify-center rounded-full text-white/10 opacity-0 transition-all duration-300 hover:opacity-40"
+            >
+                <span className="text-[10px]">
+                    ◈
+                </span>
+            </Link>
         </>
     );
 }

@@ -4,547 +4,411 @@ import ourLittleWorld from "../assets/images/our-little-world.png";
 import jdServices from "../assets/images/jd&s.png";
 import campusConnect from "../assets/images/campus.png";
 
-function Projects() {
-    const [isVisible, setIsVisible] = useState(false);
-    const projectsRef = useRef(null);
+const API_URL =
+    window.location.hostname === "localhost"
+        ? "http://localhost:5000"
+        : import.meta.env.VITE_API_URL || "";
 
-    const personalProjects = [
-        {
-            type: "Personal Project",
-            status: "In Progress",
-            title: "Our Little World",
-            description:
-                "A personal website I built for my girlfriend while learning web development. It brings our memories, bucket list, and favorite moments together in one place. The project is still in progress as I continue improving and adding new ideas.",
-            technologies: [
-                "HTML",
-                "CSS",
-                "JavaScript",
-                "LocalStorage",
-                "Git",
-                "GitHub",
-            ],
-            github:
-                "https://github.com/elliefranzgabuts-arch/our-little-world",
-            image: ourLittleWorld,
-        },
-    ];
+function ExternalLinkIcon() {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+            aria-hidden="true"
+        >
+            <path d="M14 5h5v5" />
+            <path d="M19 5 10 14" />
+            <path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" />
+        </svg>
+    );
+}
 
-    const teamProjects = [
-        {
-            type: "Team Project",
-            status: "UI/UX Contributor",
-            title: "JD&S Services",
-            description:
-                "A team project focused on a food delivery and services website for local restaurants in Iloilo. I worked on the interface and visual direction, helping shape the layout and overall user experience before development.",
-            contribution:
-                "UI/UX design and visual direction using Figma.",
-            technologies: [
-                "Figma",
-                "HTML",
-                "CSS",
-                "JavaScript",
-            ],
-            image: jdServices,
-            github: "",
-        },
-        {
-            type: "Team Project",
-            status: "System Flow Contributor",
-            title: "CampusConnect",
-            description:
-                "An appointment scheduling system for campus activities and services. I helped map out the system flow and visualize how users and processes would move through the system before development.",
-            contribution:
-                "System flowchart and process visualization.",
-            technologies: [
-                "Flowchart",
-                "HTML",
-                "CSS",
-                "JavaScript",
-            ],
-            image: campusConnect,
-            github: "",
-        },
-    ];
+function normalizeTechnologies(technologies) {
+    if (Array.isArray(technologies)) {
+        return technologies
+            .map((item) => String(item).trim())
+            .filter(Boolean);
+    }
+
+    if (typeof technologies === "string") {
+        try {
+            const parsed = JSON.parse(technologies);
+
+            if (Array.isArray(parsed)) {
+                return parsed
+                    .map((item) => String(item).trim())
+                    .filter(Boolean);
+            }
+        } catch {
+            return technologies
+                .split(",")
+                .map((item) => item.trim())
+                .filter(Boolean);
+        }
+    }
+
+    return [];
+}
+
+function getImageUrl(imageUrl) {
+    if (!imageUrl) {
+        return "";
+    }
+
+    if (
+        imageUrl.startsWith("http://") ||
+        imageUrl.startsWith("https://")
+    ) {
+        return imageUrl;
+    }
+
+    return `${API_URL}${imageUrl}`;
+}
+
+const teamProjects = [
+    {
+        id: "team-jds",
+        title: "JD&S Services",
+        description:
+            "A team-based service website project designed to present services through a clean and accessible digital experience.",
+        type: "Team Project",
+        status: "Completed",
+        technologies: [
+            "Figma",
+            "HTML",
+            "CSS",
+            "JavaScript",
+        ],
+        image: jdServices,
+        github: "",
+    },
+    {
+        id: "team-campus",
+        title: "CampusConnect",
+        description:
+            "A student-focused web project designed to organize campus information and provide a simple digital experience.",
+        type: "Team Project",
+        status: "Completed",
+        technologies: [
+            "Flowchart",
+            "HTML",
+            "CSS",
+            "JavaScript",
+        ],
+        image: campusConnect,
+        github: "",
+    },
+];
+
+function ProjectShowcase({ project, index }) {
+    const cardRef = useRef(null);
 
     useEffect(() => {
+        const element = cardRef.current;
+
+        if (!element) {
+            return;
+        }
+
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
-                    setIsVisible(true);
-                    observer.disconnect();
+                    element.classList.add(
+                        "project-visible"
+                    );
+
+                    observer.unobserve(element);
                 }
             },
             {
-                threshold: 0.12,
+                threshold: 0.15,
             }
         );
 
-        if (projectsRef.current) {
-            observer.observe(projectsRef.current);
-        }
+        observer.observe(element);
 
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+        };
     }, []);
 
-    const ProjectShowcase = ({
-        project,
-        delay = 0,
-        featured = false,
-    }) => {
-        return (
-            <article
-                className={`
-                    group
-                    transition-all
-                    duration-700
-                    ${
-                        isVisible
-                            ? "opacity-100 translate-y-0"
-                            : "opacity-0 translate-y-10"
-                    }
-                `}
-                style={{
-                    transitionDelay: `${delay}ms`,
-                }}
-            >
-                <div
-                    className={`
-                        grid
-                        grid-cols-1
-                        ${
-                            featured
-                                ? "lg:grid-cols-[1.15fr_0.85fr]"
-                                : "lg:grid-cols-[1fr_1fr]"
-                        }
-                        gap-10
-                        lg:gap-16
-                        items-center
-                    `}
-                >
-                    {/* IMAGE */}
-                    <div
-                        className="
-                            relative
-                            overflow-hidden
-                            bg-[#080808]
-                            border
-                            border-[#222]
-                            transition-all
-                            duration-500
-                            group-hover:border-[#444]
-                            group-hover:shadow-[0_20px_60px_rgba(0,0,0,0.45)]
-                        "
-                    >
-                        {/* Browser-style header */}
-                        <div
-                            className="
-                                flex
-                                items-center
-                                justify-between
-                                px-4
-                                py-3
-                                bg-[#0a0a0a]
-                                border-b
-                                border-[#222]
-                            "
-                        >
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+    return (
+        <article
+            ref={cardRef}
+            className="project-card group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] opacity-0 shadow-2xl backdrop-blur-sm transition-all duration-700 hover:-translate-y-2 hover:border-white/20 hover:bg-white/[0.05]"
+            style={{
+                transitionDelay: `${index * 120}ms`,
+            }}
+        >
+            <div className="relative aspect-video overflow-hidden bg-black/20">
+                {project.image ? (
+                    <img
+                        src={project.image}
+                        alt={project.title}
+                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                        onError={(event) => {
+                            event.currentTarget.style.display =
+                                "none";
+                        }}
+                    />
+                ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-white/40">
+                        No project image
+                    </div>
+                )}
 
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#444]"></span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#444]"></span>
-                            </div>
+                <div className="absolute left-5 top-5">
+                    <span className="rounded-full border border-white/10 bg-black/50 px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur-md">
+                        {project.type}
+                    </span>
+                </div>
+            </div>
 
-                            <span className="text-[9px] uppercase tracking-[0.25em] text-[#444]">
-                                Project Preview
-                            </span>
-                        </div>
+            <div className="p-6 md:p-7">
+                <div className="mb-4 flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                        <h3 className="text-xl font-semibold tracking-tight text-white md:text-2xl">
+                            {project.title}
+                        </h3>
 
-                        {/* PROJECT IMAGE */}
-                        <div className="relative overflow-hidden">
-                            <img
-                                src={project.image}
-                                alt={`${project.title} project preview`}
-                                loading="lazy"
-                                className={`
-                                    block
-                                    w-full
-                                    ${
-                                        featured
-                                            ? "h-[300px] md:h-[440px]"
-                                            : "h-[280px] md:h-[380px]"
-                                    }
-                                    object-cover
-                                    object-top
-                                    transition-transform
-                                    duration-700
-                                    group-hover:scale-[1.035]
-                                `}
-                            />
-
-                            {/* Image overlay */}
-                            <div
-                                className="
-                                    absolute
-                                    inset-0
-                                    bg-gradient-to-t
-                                    from-black/60
-                                    via-transparent
-                                    to-transparent
-                                    opacity-70
-                                    transition-opacity
-                                    duration-500
-                                    group-hover:opacity-40
-                                "
-                            ></div>
-
-                            {/* Red accent line */}
-                            <div
-                                className="
-                                    absolute
-                                    bottom-0
-                                    left-0
-                                    h-[2px]
-                                    w-0
-                                    bg-red-500
-                                    transition-all
-                                    duration-700
-                                    group-hover:w-full
-                                "
-                            ></div>
-                        </div>
+                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/40">
+                            {project.status}
+                        </p>
                     </div>
 
-                    {/* CONTENT */}
-                    <div className="relative">
-                        {/* META */}
-                        <div className="flex flex-wrap items-center gap-3 mb-5">
-                            <span className="w-8 h-px bg-red-500"></span>
-
-                            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-red-500">
-                                {project.type}
-                            </span>
-
-                            <span className="text-[#333]">/</span>
-
-                            <span className="text-[10px] uppercase tracking-[0.18em] text-gray-600">
-                                {project.status}
-                            </span>
-                        </div>
-
-                        {/* TITLE */}
-                        <h2
-                            className="
-                                text-4xl
-                                md:text-5xl
-                                lg:text-6xl
-                                font-bold
-                                tracking-tight
-                                leading-[0.95]
-                                text-white
-                                transition-transform
-                                duration-500
-                                group-hover:translate-x-1
-                            "
+                    {project.github && (
+                        <a
+                            href={project.github}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/60 transition hover:border-white/30 hover:bg-white/5 hover:text-white"
+                            aria-label={`Open ${project.title}`}
+                            title={`Open ${project.title}`}
                         >
-                            {project.title}
-                            <span className="text-red-500">.</span>
-                        </h2>
+                            <ExternalLinkIcon />
+                        </a>
+                    )}
+                </div>
 
-                        {/* DESCRIPTION */}
-                        <p
-                            className="
-                                mt-6
-                                text-gray-400
-                                text-sm
-                                md:text-base
-                                leading-relaxed
-                                max-w-xl
-                                transition-colors
-                                duration-300
-                                group-hover:text-gray-300
-                            "
-                        >
-                            {project.description}
-                        </p>
+                <p className="mb-6 text-sm leading-7 text-white/55 md:text-[15px]">
+                    {project.description}
+                </p>
 
-                        {/* CONTRIBUTION */}
-                        {project.contribution && (
-                            <div
-                                className="
-                                    mt-7
-                                    pl-4
-                                    border-l
-                                    border-[#333]
-                                    transition-all
-                                    duration-500
-                                    group-hover:border-red-500
-                                "
-                            >
-                                <p
-                                    className="
-                                        text-[10px]
-                                        font-semibold
-                                        uppercase
-                                        tracking-[0.22em]
-                                        text-gray-600
-                                        mb-2
-                                    "
-                                >
-                                    My Contribution
-                                </p>
-
-                                <p className="text-sm text-gray-400 leading-relaxed">
-                                    {project.contribution}
-                                </p>
-                            </div>
-                        )}
-
-                        {/* TECHNOLOGIES */}
-                        <div className="mt-8">
-                            <p
-                                className="
-                                    text-[10px]
-                                    font-semibold
-                                    uppercase
-                                    tracking-[0.22em]
-                                    text-gray-600
-                                    mb-3
-                                "
-                            >
-                                Technologies
-                            </p>
-
-                            <div className="flex flex-wrap gap-2">
-                                {project.technologies.map((technology) => (
+                {project.technologies &&
+                    project.technologies.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            {project.technologies.map(
+                                (
+                                    technology,
+                                    technologyIndex
+                                ) => (
                                     <span
-                                        key={technology}
-                                        className="
-                                            px-3
-                                            py-1.5
-                                            border
-                                            border-[#252525]
-                                            bg-[#080808]
-                                            text-[11px]
-                                            text-gray-400
-                                            transition-all
-                                            duration-300
-                                            hover:border-red-500/60
-                                            hover:text-white
-                                            hover:bg-red-500/5
-                                        "
+                                        key={`${project.id}-${technology}-${technologyIndex}`}
+                                        className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/65 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white/80"
                                     >
                                         {technology}
                                     </span>
-                                ))}
-                            </div>
+                                )
+                            )}
                         </div>
+                    )}
+            </div>
+        </article>
+    );
+}
 
-                        {/* GITHUB */}
-                        {project.github && (
-                            <div className="mt-8">
-                                <a
-                                    href={project.github}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label={`View ${project.title} on GitHub`}
-                                    className="
-                                        group/link
-                                        inline-flex
-                                        items-center
-                                        gap-4
-                                        text-sm
-                                        font-semibold
-                                        text-white
-                                    "
-                                >
-                                    <span
-                                        className="
-                                            border-b
-                                            border-red-500
-                                            pb-1
-                                            transition-colors
-                                            duration-300
-                                            group-hover/link:text-red-400
-                                        "
-                                    >
-                                        View on GitHub
-                                    </span>
+function Projects() {
+    const [personalProjects, setPersonalProjects] =
+        useState([]);
 
-                                    <span
-                                        className="
-                                            text-red-500
-                                            text-lg
-                                            transition-transform
-                                            duration-300
-                                            group-hover/link:translate-x-2
-                                        "
-                                    >
-                                        →
-                                    </span>
-                                </a>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </article>
-        );
-    };
+    const [loading, setLoading] = useState(true);
+
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        let mounted = true;
+
+        async function fetchProjects() {
+            try {
+                setLoading(true);
+                setError("");
+
+                const response = await fetch(
+                    `${API_URL}/api/projects`
+                );
+
+                if (!response.ok) {
+                    throw new Error(
+                        `Server returned ${response.status}`
+                    );
+                }
+
+                const data =
+                    await response.json();
+
+                if (!data.success) {
+                    throw new Error(
+                        data.message ||
+                            "Failed to load projects."
+                    );
+                }
+
+                if (!mounted) {
+                    return;
+                }
+
+                const projects = Array.isArray(
+                    data.projects
+                )
+                    ? data.projects
+                    : [];
+
+                const formattedProjects =
+                    projects.map((project) => ({
+                        ...project,
+                        type: "Personal Project",
+                        status: "Built & Maintained",
+                        technologies:
+                            normalizeTechnologies(
+                                project.technologies
+                            ),
+                        image: project.image_url
+                            ? getImageUrl(
+                                  project.image_url
+                              )
+                            : ourLittleWorld,
+                        github:
+                            project.link || "",
+                    }));
+
+                setPersonalProjects(
+                    formattedProjects
+                );
+            } catch (fetchError) {
+                console.error(
+                    "Error loading projects:",
+                    fetchError
+                );
+
+                if (!mounted) {
+                    return;
+                }
+
+                setError(
+                    "Unable to load projects from the database."
+                );
+
+                setPersonalProjects([]);
+            } finally {
+                if (mounted) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        fetchProjects();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const allProjects = [
+        ...personalProjects,
+        ...teamProjects,
+    ];
 
     return (
         <section
-            ref={projectsRef}
             id="projects"
-            className="
-                relative
-                overflow-hidden
-                bg-black
-                text-white
-                px-6
-                md:px-10
-                py-28
-                md:py-32
-                scroll-mt-24
-            "
+            className="relative overflow-hidden px-6 py-24 md:px-10 lg:px-16"
         >
-            {/* Background details */}
-            <div className="absolute top-0 left-0 w-full h-px bg-[#171717]"></div>
+            <style>
+                {`
+                    .project-card {
+                        transform: translateY(30px);
+                    }
 
-            <div className="absolute top-24 right-0 w-32 h-px bg-red-500/20"></div>
+                    .project-card.project-visible {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                `}
+            </style>
 
-            <div className="absolute bottom-32 left-0 w-24 h-px bg-red-500/10"></div>
-
-            <div className="relative max-w-7xl mx-auto">
-                {/* HEADER */}
-                <div
-                    className={`
-                        mb-24
-                        transition-all
-                        duration-700
-                        ${
-                            isVisible
-                                ? "opacity-100 translate-y-0"
-                                : "opacity-0 translate-y-8"
-                        }
-                    `}
-                >
-                    <div className="flex items-center gap-4 mb-7">
-                        <span className="w-10 h-px bg-red-500"></span>
-
-                        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-red-500">
-                            Projects
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 items-end">
-                        <h1
-                            className="
-                                text-6xl
-                                md:text-8xl
-                                lg:text-9xl
-                                font-bold
-                                leading-[0.82]
-                                tracking-[-0.05em]
-                            "
-                        >
-                            Things
-                            <br />
-                            <span className="text-[#555]">
-                                I've Built
-                            </span>
-                            <span className="text-red-500">.</span>
-                        </h1>
-
-                        <p className="text-gray-500 text-base md:text-lg leading-relaxed max-w-md lg:ml-auto">
-                            A collection of personal and team projects where
-                            I've applied what I've learned and contributed to
-                            building something real.
-                        </p>
-                    </div>
-                </div>
-
-                {/* PERSONAL PROJECTS */}
-                <div>
-                    <div
-                        className="
-                            flex
-                            items-center
-                            gap-5
-                            mb-10
-                        "
-                    >
-                        <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-gray-300">
-                            Personal Projects
-                        </h2>
-
-                        <div className="h-px bg-[#222] flex-1"></div>
-                    </div>
-
-                    <div className="space-y-20">
-                        {personalProjects.map((project) => (
-                            <ProjectShowcase
-                                key={project.title}
-                                project={project}
-                                delay={150}
-                                featured
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                {/* TEAM PROJECTS */}
-                <div className="mt-32">
-                    <div
-                        className="
-                            flex
-                            items-center
-                            gap-5
-                            mb-10
-                        "
-                    >
-                        <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-gray-300">
-                            Team Projects
-                        </h2>
-
-                        <div className="h-px bg-[#222] flex-1"></div>
-                    </div>
-
-                    <div className="space-y-24">
-                        {teamProjects.map((project, index) => (
-                            <ProjectShowcase
-                                key={project.title}
-                                project={project}
-                                delay={400 + index * 180}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                {/* FOOTER */}
-                <div
-                    className="
-                        mt-28
-                        pt-8
-                        border-t
-                        border-[#171717]
-                        flex
-                        flex-col
-                        md:flex-row
-                        md:items-center
-                        justify-between
-                        gap-4
-                    "
-                >
-                    <p className="text-sm text-gray-600">
-                        More projects coming as I continue learning and
-                        building.
+            <div className="mx-auto max-w-7xl">
+                <div className="mb-14 max-w-2xl">
+                    <p className="mb-3 text-xs font-medium uppercase tracking-[0.3em] text-white/40">
+                        Selected Work
                     </p>
 
-                    <span className="text-xs uppercase tracking-[0.2em] text-gray-700">
-                        More to come
-                    </span>
+                    <h2 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
+                        Projects
+                    </h2>
+
+                    <p className="mt-5 text-sm leading-7 text-white/50 md:text-base">
+                        A collection of projects
+                        I've built, developed,
+                        and worked on throughout
+                        my journey in IT.
+                    </p>
                 </div>
+
+                {loading && (
+                    <div className="flex items-center justify-center py-16">
+                        <div
+                            className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white/80"
+                            aria-label="Loading projects"
+                        />
+                    </div>
+                )}
+
+                {!loading && error && (
+                    <div className="mb-8 rounded-2xl border border-red-400/10 bg-red-400/[0.04] px-5 py-4 text-sm text-red-300/70">
+                        {error}
+                    </div>
+                )}
+
+                {!loading &&
+                    !error &&
+                    allProjects.length === 0 && (
+                        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center text-sm text-white/40">
+                            No projects available
+                            yet.
+                        </div>
+                    )}
+
+                {!loading &&
+                    allProjects.length > 0 && (
+                        <div className="grid gap-7 md:grid-cols-2">
+                            {allProjects.map(
+                                (
+                                    project,
+                                    index
+                                ) => (
+                                    <ProjectShowcase
+                                        key={
+                                            project.id
+                                        }
+                                        project={
+                                            project
+                                        }
+                                        index={
+                                            index
+                                        }
+                                    />
+                                )
+                            )}
+                        </div>
+                    )}
             </div>
         </section>
     );
