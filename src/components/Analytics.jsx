@@ -19,8 +19,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 
 const API_URL =
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:5000";
+    "https://portfolio-production-881c.up.railway.app";
 
 const DEMO_ANALYTICS = {
     uniqueVisitors: 0,
