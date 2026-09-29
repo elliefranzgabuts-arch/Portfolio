@@ -1,6 +1,49 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 function Footer() {
+    const API_URL =
+        "https://portfolio-production-881c.up.railway.app";
+
+    useEffect(() => {
+        const recordVisitor = async () => {
+            try {
+                let visitorId = localStorage.getItem("visitorId");
+
+                if (!visitorId) {
+                    visitorId = crypto.randomUUID();
+                    localStorage.setItem("visitorId", visitorId);
+                }
+
+                const sessionKey = `visitorRecorded_${visitorId}`;
+
+                if (sessionStorage.getItem(sessionKey)) {
+                    return;
+                }
+
+                sessionStorage.setItem(sessionKey, "true");
+
+                await fetch(`${API_URL}/api/visitors`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        visitorId,
+                        path: window.location.pathname,
+                    }),
+                });
+            } catch (error) {
+                console.error(
+                    "Visitor tracking failed:",
+                    error
+                );
+            }
+        };
+
+        recordVisitor();
+    }, []);
+
     return (
         <footer className="w-full border-t border-white/10 bg-black px-6 py-10 text-white">
             <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
@@ -71,3 +114,4 @@ function Footer() {
 }
 
 export default Footer;
+
