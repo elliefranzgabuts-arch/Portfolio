@@ -43,3 +43,4 @@ server/.env
 
 # ZIP archives
 *.zip
+server/uploads/
