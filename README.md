@@ -174,6 +174,7 @@ The dashboard also provides visual representations of visitor activity and traff
 
 ## Project Structure
 
+```text
 Portfolio/
 ├── src/
 │   ├── components/
@@ -197,7 +198,7 @@ Portfolio/
 ├── public/
 ├── package.json
 └── README.md
-
+```
 
 ## Database
 
@@ -205,6 +206,7 @@ The backend uses MySQL as the primary database.
 
 The production database is hosted through Aiven and contains tables responsible for different parts of the portfolio system.
 
+```text
 admin_activity
 certificates
 contact_messages
@@ -212,6 +214,7 @@ projects
 site_stats
 unique_visitors
 visitors
+```
 
 These tables support administrative activity tracking, portfolio content, contact messages, project management, website statistics, and visitor monitoring.
 
@@ -246,23 +249,21 @@ The Node.js and Express.js backend is deployed through Railway.
 
 The production MySQL database is hosted through Aiven.
 
-
+```text
 User
  │
  ▼
 Portfolio Website
  │
- │
  ▼
 Cloudflare
- │
  │ REST API
  ▼
 Railway Backend
  │
  ▼
 Aiven MySQL
-
+```
 
 ## Objective
 
@@ -270,7 +271,7 @@ The main objective of this project is to build a functional personal portfolio t
 
 The system is designed to present my background, technical skills, projects, and development journey while also providing practical experience in frontend development, backend development, database management, REST API integration, authentication, deployment, and website analytics.
 
-The project also serves as an ongoing development environment where new features, improvements, and technologies can be introduced as my skills continue to grow.
+The project also serves as an ongoing development environment where new features, improvements, projects, and technologies can be introduced as my skills continue to grow.
 
 ## Development Status
 
