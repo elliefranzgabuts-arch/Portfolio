@@ -72,25 +72,19 @@ function normalizeTechnologies(technologies) {
 }
 
 async function apiFetch(endpoint, options = {}) {
-    const response = await fetch(
-        `${API_URL}${endpoint}`,
-        {
-            ...options,
-            headers: {
-                "Content-Type": "application/json",
-                ...(options.headers || {}),
-            },
-        }
-    );
+    const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {}),
+        },
+    });
 
-    const data = await response
-        .json()
-        .catch(() => ({}));
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
         throw new Error(
-            data.message ||
-                "Something went wrong."
+            data.message || "Something went wrong."
         );
     }
 
@@ -128,14 +122,11 @@ async function authenticatedMultipartFetch(
         }
     );
 
-    const data = await response
-        .json()
-        .catch(() => ({}));
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
         throw new Error(
-            data.message ||
-                "Something went wrong."
+            data.message || "Something went wrong."
         );
     }
 
@@ -212,98 +203,323 @@ function SectionHeader({
     );
 }
 
+/* =========================================================
+   VISITOR ACTIVITY
+========================================================= */
+
 function VisitorsChart({ visitors }) {
     const rows = Array.isArray(visitors)
         ? visitors
         : [];
 
-    if (rows.length === 0) {
+    const grouped = {};
+
+    rows.forEach((visitor) => {
+        if (!visitor?.visited_at) return;
+
+        const date = new Date(visitor.visited_at);
+
+        if (Number.isNaN(date.getTime())) return;
+
+        const key = [
+            date.getFullYear(),
+            String(date.getMonth() + 1).padStart(2, "0"),
+            String(date.getDate()).padStart(2, "0"),
+        ].join("-");
+
+        grouped[key] =
+            (grouped[key] || 0) + 1;
+    });
+
+    const chartData = Object.entries(grouped)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, visits]) => ({
+            date,
+            visits,
+            label: new Date(
+                `${date}T00:00:00`
+            ).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+            }),
+        }));
+
+    if (chartData.length === 0) {
         return (
-            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025]">
+            <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02]">
                 <div className="text-center">
                     <BarChart3
-                        size={28}
-                        className="mx-auto text-white/20"
+                        className="mx-auto mb-3 text-white/20"
+                        size={32}
                     />
 
-                    <p className="mt-3 text-sm text-white/40">
-                        No visitor data yet.
+                    <p className="text-sm text-white/40">
+                        No visitor activity yet
                     </p>
                 </div>
             </div>
         );
     }
 
-    const grouped = {};
+    const chartHeight = 280;
 
-    rows.forEach((visitor) => {
-        const date = visitor.visited_at
-            ? new Date(
-                  visitor.visited_at
-              ).toLocaleDateString(
-                  undefined,
-                  {
-                      month: "short",
-                      day: "numeric",
-                  }
-              )
-            : "Unknown";
+    const chartWidth = Math.max(
+        640,
+        chartData.length * 80
+    );
 
-        grouped[date] =
-            (grouped[date] || 0) + 1;
-    });
+    const padding = {
+        top: 24,
+        right: 24,
+        bottom: 48,
+        left: 48,
+    };
 
-    const chartData = Object.entries(
-        grouped
-    ).reverse();
+    const plotWidth =
+        chartWidth -
+        padding.left -
+        padding.right;
+
+    const plotHeight =
+        chartHeight -
+        padding.top -
+        padding.bottom;
 
     const maxValue = Math.max(
         ...chartData.map(
-            ([, value]) => value
+            (item) => item.visits
         ),
         1
     );
 
+    const tickStep = Math.max(
+        1,
+        Math.ceil(maxValue / 4)
+    );
+
+    const yMax = tickStep * 4;
+
+    const getX = (index) => {
+        if (chartData.length === 1) {
+            return (
+                padding.left +
+                plotWidth / 2
+            );
+        }
+
+        return (
+            padding.left +
+            (index * plotWidth) /
+                (chartData.length - 1)
+        );
+    };
+
+    const getY = (value) => {
+        return (
+            padding.top +
+            plotHeight -
+            (value / yMax) *
+                plotHeight
+        );
+    };
+
+    const points = chartData
+        .map(
+            (item, index) =>
+                `${getX(index)},${getY(
+                    item.visits
+                )}`
+        )
+        .join(" ");
+
+    const areaPoints = [
+        `${getX(0)},${
+            padding.top + plotHeight
+        }`,
+        ...chartData.map(
+            (item, index) =>
+                `${getX(index)},${getY(
+                    item.visits
+                )}`
+        ),
+        `${getX(
+            chartData.length - 1
+        )},${
+            padding.top + plotHeight
+        }`,
+    ].join(" ");
+
+    const labelStep = Math.max(
+        1,
+        Math.ceil(chartData.length / 6)
+    );
+
     return (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
-            <div className="flex h-[220px] items-end gap-2 overflow-x-auto">
+        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+            <svg
+                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                width={chartWidth}
+                height={chartHeight}
+                className="min-w-full"
+                role="img"
+                aria-label="Visitor activity line graph"
+            >
+                {Array.from({
+                    length: 5,
+                }).map((_, index) => {
+                    const value =
+                        tickStep * index;
+
+                    const y = getY(value);
+
+                    return (
+                        <g key={value}>
+                            <line
+                                x1={
+                                    padding.left
+                                }
+                                y1={y}
+                                x2={
+                                    chartWidth -
+                                    padding.right
+                                }
+                                y2={y}
+                                stroke="currentColor"
+                                strokeOpacity="0.08"
+                                strokeWidth="1"
+                            />
+
+                            <text
+                                x={
+                                    padding.left -
+                                    10
+                                }
+                                y={y + 4}
+                                textAnchor="end"
+                                className="fill-white/30 text-[11px]"
+                            >
+                                {value}
+                            </text>
+                        </g>
+                    );
+                })}
+
+                <line
+                    x1={padding.left}
+                    y1={
+                        padding.top +
+                        plotHeight
+                    }
+                    x2={
+                        chartWidth -
+                        padding.right
+                    }
+                    y2={
+                        padding.top +
+                        plotHeight
+                    }
+                    stroke="currentColor"
+                    strokeOpacity="0.12"
+                    strokeWidth="1"
+                />
+
+                <polygon
+                    points={areaPoints}
+                    fill="currentColor"
+                    fillOpacity="0.04"
+                />
+
+                <polyline
+                    points={points}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-white/80"
+                />
+
                 {chartData.map(
-                    ([date, value]) => {
-                        const height =
-                            Math.max(
-                                (value /
-                                    maxValue) *
-                                    100,
-                                6
+                    (item, index) => {
+                        const x =
+                            getX(index);
+
+                        const y =
+                            getY(
+                                item.visits
                             );
 
                         return (
-                            <div
-                                key={date}
-                                className="flex min-w-[42px] flex-1 flex-col items-center justify-end gap-2"
+                            <g
+                                key={
+                                    item.date
+                                }
                             >
-                                <span className="text-xs text-white/50">
-                                    {value}
-                                </span>
-
-                                <div
-                                    className="w-full rounded-t-lg bg-white/20 transition hover:bg-white/30"
-                                    style={{
-                                        height: `${height}%`,
-                                    }}
+                                <circle
+                                    cx={x}
+                                    cy={y}
+                                    r="5"
+                                    fill="currentColor"
+                                    className="text-white"
                                 />
 
-                                <span className="whitespace-nowrap text-[10px] text-white/30">
-                                    {date}
-                                </span>
-                            </div>
+                                <circle
+                                    cx={x}
+                                    cy={y}
+                                    r="9"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeOpacity="0.15"
+                                    className="text-white"
+                                />
+
+                                <title>
+                                    {
+                                        item.label
+                                    }
+                                    :{" "}
+                                    {
+                                        item.visits
+                                    }{" "}
+                                    {item.visits ===
+                                    1
+                                        ? "visit"
+                                        : "visits"}
+                                </title>
+
+                                {(index %
+                                    labelStep ===
+                                    0 ||
+                                    index ===
+                                        chartData.length -
+                                            1) && (
+                                    <text
+                                        x={x}
+                                        y={
+                                            chartHeight -
+                                            18
+                                        }
+                                        textAnchor="middle"
+                                        className="fill-white/35 text-[11px]"
+                                    >
+                                        {
+                                            item.label
+                                        }
+                                    </text>
+                                )}
+                            </g>
                         );
                     }
                 )}
-            </div>
+            </svg>
         </div>
     );
 }
+
+/* =========================================================
+   TRAFFIC
+   Same data source, completely separate visual design.
+========================================================= */
 
 function TrafficChart({ visitors }) {
     const rows = Array.isArray(visitors)
@@ -314,11 +530,10 @@ function TrafficChart({ visitors }) {
 
     rows.forEach((visitor) => {
         const visitorPath =
-            visitor.path || "/";
+            visitor?.path || "/";
 
         pathCounts[visitorPath] =
-            (pathCounts[visitorPath] || 0) +
-            1;
+            (pathCounts[visitorPath] || 0) + 1;
     });
 
     const traffic = Object.entries(
@@ -327,14 +542,20 @@ function TrafficChart({ visitors }) {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 6);
 
-    const total = traffic.reduce(
-        (sum, [, value]) => sum + value,
+    /*
+     * IMPORTANT:
+     * This is the total number of recorded page views
+     * represented by the traffic list.
+     */
+    const totalPageViews = traffic.reduce(
+        (sum, [, count]) =>
+            sum + Number(count || 0),
         0
     );
 
     if (traffic.length === 0) {
         return (
-            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025]">
+            <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025]">
                 <div className="text-center">
                     <Activity
                         size={28}
@@ -349,48 +570,267 @@ function TrafficChart({ visitors }) {
         );
     }
 
+    const circumference =
+        2 * Math.PI * 72;
+
+    let accumulated = 0;
+
     return (
-        <div className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.025] p-5">
-            {traffic.map(
-                ([pathName, count]) => {
-                    const percentage =
-                        total > 0
-                            ? Math.round(
-                                  (count /
-                                      total) *
-                                      100
-                              )
-                            : 0;
+        <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+            {/* Traffic summary */}
+            <div className="mb-6 grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.025] p-4">
+                    <p className="text-[11px] uppercase tracking-wider text-white/30">
+                        Page Views
+                    </p>
 
-                    return (
-                        <div
-                            key={pathName}
-                        >
-                            <div className="mb-2 flex items-center justify-between gap-4">
-                                <span className="truncate text-sm text-white/70">
-                                    {pathName}
-                                </span>
+                    <p className="mt-2 text-2xl font-semibold tracking-tight text-white">
+                        {totalPageViews}
+                    </p>
 
-                                <span className="text-xs text-white/40">
-                                    {count} visits
-                                </span>
-                            </div>
+                    <p className="mt-1 text-xs text-white/30">
+                        Recorded visits
+                    </p>
+                </div>
 
-                            <div className="h-2 overflow-hidden rounded-full bg-white/5">
-                                <div
-                                    className="h-full rounded-full bg-white/30"
-                                    style={{
-                                        width: `${percentage}%`,
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    );
-                }
-            )}
+                <div className="rounded-xl border border-white/10 bg-white/[0.025] p-4">
+                    <p className="text-[11px] uppercase tracking-wider text-white/30">
+                        Pages
+                    </p>
+
+                    <p className="mt-2 text-2xl font-semibold tracking-tight text-white">
+                        {traffic.length}
+                    </p>
+
+                    <p className="mt-1 text-xs text-white/30">
+                        Page
+                        {traffic.length === 1
+                            ? ""
+                            : "s"}{" "}
+                        tracked
+                    </p>
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-7 sm:flex-row sm:items-center">
+                {/* Donut */}
+                <div className="relative mx-auto shrink-0">
+                    <svg
+                        width="190"
+                        height="190"
+                        viewBox="0 0 190 190"
+                        className="-rotate-90"
+                        role="img"
+                        aria-label="Traffic distribution chart"
+                    >
+                        {/* Background ring */}
+                        <circle
+                            cx="95"
+                            cy="95"
+                            r="72"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="14"
+                            className="text-white/5"
+                        />
+
+                        {traffic.map(
+                            (
+                                [
+                                    pathName,
+                                    count,
+                                ],
+                                index
+                            ) => {
+                                const numericCount =
+                                    Number(
+                                        count ||
+                                            0
+                                    );
+
+                                const percentage =
+                                    totalPageViews >
+                                    0
+                                        ? numericCount /
+                                          totalPageViews
+                                        : 0;
+
+                                const dashLength =
+                                    percentage *
+                                    circumference;
+
+                                const dashOffset =
+                                    -accumulated *
+                                    circumference;
+
+                                accumulated +=
+                                    percentage;
+
+                                const segmentClass =
+                                    index === 0
+                                        ? "text-white/80"
+                                        : index ===
+                                            1
+                                          ? "text-white/60"
+                                          : index ===
+                                              2
+                                            ? "text-white/45"
+                                            : index ===
+                                                3
+                                              ? "text-white/30"
+                                              : index ===
+                                                  4
+                                                ? "text-white/20"
+                                                : "text-white/10";
+
+                                return (
+                                    <circle
+                                        key={
+                                            pathName
+                                        }
+                                        cx="95"
+                                        cy="95"
+                                        r="72"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="14"
+                                        strokeLinecap="round"
+                                        strokeDasharray={`${dashLength} ${circumference}`}
+                                        strokeDashoffset={
+                                            dashOffset
+                                        }
+                                        className={
+                                            segmentClass
+                                        }
+                                    />
+                                );
+                            }
+                        )}
+                    </svg>
+
+                    {/* Donut center */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-semibold tracking-tight text-white">
+                            {
+                                totalPageViews
+                            }
+                        </span>
+
+                        <span className="mt-1 text-xs text-white/30">
+                            Page Views
+                        </span>
+                    </div>
+                </div>
+
+                {/* Page breakdown */}
+                <div className="min-w-0 flex-1">
+                    <div className="mb-3 flex items-center justify-between">
+                        <p className="text-xs uppercase tracking-wider text-white/25">
+                            Traffic
+                            distribution
+                        </p>
+                    </div>
+
+                    <div className="space-y-4">
+                        {traffic.map(
+                            (
+                                [
+                                    pathName,
+                                    count,
+                                ],
+                                index
+                            ) => {
+                                const numericCount =
+                                    Number(
+                                        count ||
+                                            0
+                                    );
+
+                                /*
+                                 * Keep this value between 0 and 100.
+                                 * Do NOT multiply by 100 here because
+                                 * the display already adds the % sign.
+                                 */
+                                const percentage =
+                                    totalPageViews >
+                                    0
+                                        ? Math.round(
+                                              (numericCount /
+                                                  totalPageViews) *
+                                                  100
+                                          )
+                                        : 0;
+
+                                const dotClass =
+                                    index === 0
+                                        ? "bg-white/80"
+                                        : index ===
+                                            1
+                                          ? "bg-white/60"
+                                          : index ===
+                                              2
+                                            ? "bg-white/45"
+                                            : index ===
+                                                3
+                                              ? "bg-white/30"
+                                              : index ===
+                                                  4
+                                                ? "bg-white/20"
+                                                : "bg-white/10";
+
+                                return (
+                                    <div
+                                        key={
+                                            pathName
+                                        }
+                                        className="flex items-center gap-3"
+                                    >
+                                        <div
+                                            className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotClass}`}
+                                        />
+
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <span className="truncate text-sm text-white/70">
+                                                    {
+                                                        pathName
+                                                    }
+                                                </span>
+
+                                                <span className="shrink-0 text-xs font-medium tabular-nums text-white/60">
+                                                    {
+                                                        numericCount
+                                                    }
+                                                </span>
+                                            </div>
+
+                                            <div className="mt-1.5 flex items-center justify-between">
+                                                <span className="text-[11px] text-white/25">
+                                                    {
+                                                        percentage
+                                                    }
+                                                    %
+                                                </span>
+
+                                                <span className="text-[11px] text-white/20">
+                                                    visits
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
+
+/* =========================================================
+   RECENT VISITORS
+========================================================= */
 
 function RecentVisitors({
     visitors,
@@ -465,6 +905,10 @@ function RecentVisitors({
     );
 }
 
+/* =========================================================
+   RECENT MESSAGES
+========================================================= */
+
 function RecentMessages({
     messages,
 }) {
@@ -480,7 +924,10 @@ function RecentMessages({
                 </div>
             ) : (
                 rows.map(
-                    (message, index) => (
+                    (
+                        message,
+                        index
+                    ) => (
                         <div
                             key={
                                 message.id ||
@@ -524,6 +971,10 @@ function RecentMessages({
         </div>
     );
 }
+
+/* =========================================================
+   TECHNOLOGY INPUT
+========================================================= */
 
 function TechnologyInput({
     technologies,
@@ -587,7 +1038,8 @@ function TechnologyInput({
             </label>
 
             <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                {technologies.length > 0 && (
+                {technologies.length >
+                    0 && (
                     <div className="mb-3 flex flex-wrap gap-2">
                         {technologies.map(
                             (
@@ -635,8 +1087,7 @@ function TechnologyInput({
                             event
                         ) =>
                             setNewTechnology(
-                                event
-                                    .target
+                                event.target
                                     .value
                             )
                         }
@@ -668,6 +1119,10 @@ function TechnologyInput({
         </div>
     );
 }
+
+/* =========================================================
+   PROJECT MANAGER
+========================================================= */
 
 function ProjectsManager({
     token,
@@ -726,9 +1181,7 @@ function ProjectsManager({
                         data.projects
                     )
                         ? data.projects.map(
-                              (
-                                  project
-                              ) => ({
+                              (project) => ({
                                   ...project,
                                   technologies:
                                       normalizeTechnologies(
@@ -865,6 +1318,7 @@ function ProjectsManager({
             setError(
                 "Title and description are required."
             );
+
             return;
         }
 
@@ -1004,9 +1458,7 @@ function ProjectsManager({
                             }
                             className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm text-white/60 transition hover:bg-white/5 hover:text-white"
                         >
-                            <X
-                                size={16}
-                            />
+                            <X size={16} />
                             Cancel Edit
                         </button>
                     ) : null
@@ -1026,9 +1478,7 @@ function ProjectsManager({
             )}
 
             <form
-                onSubmit={
-                    handleSubmit
-                }
+                onSubmit={handleSubmit}
                 className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6"
             >
                 <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -1041,7 +1491,9 @@ function ProjectsManager({
                             <input
                                 type="text"
                                 value={title}
-                                onChange={(event) =>
+                                onChange={(
+                                    event
+                                ) =>
                                     setTitle(
                                         event
                                             .target
@@ -1094,7 +1546,9 @@ function ProjectsManager({
                             <input
                                 type="url"
                                 value={link}
-                                onChange={(event) =>
+                                onChange={(
+                                    event
+                                ) =>
                                     setLink(
                                         event
                                             .target
@@ -1141,9 +1595,7 @@ function ProjectsManager({
                             ) : (
                                 <>
                                     <ImagePlus
-                                        size={
-                                            32
-                                        }
+                                        size={32}
                                         className="text-white/25"
                                     />
 
@@ -1203,9 +1655,7 @@ function ProjectsManager({
                         {saving ? (
                             <>
                                 <RefreshCw
-                                    size={
-                                        16
-                                    }
+                                    size={16}
                                     className="animate-spin"
                                 />
                                 Saving...
@@ -1214,15 +1664,11 @@ function ProjectsManager({
                             <>
                                 {editingId ? (
                                     <Pencil
-                                        size={
-                                            16
-                                        }
+                                        size={16}
                                     />
                                 ) : (
                                     <Plus
-                                        size={
-                                            16
-                                        }
+                                        size={16}
                                     />
                                 )}
 
@@ -1312,7 +1758,9 @@ function ProjectsManager({
                                             }
                                         </p>
 
-                                        {project.technologies?.length >
+                                        {project
+                                            .technologies
+                                            ?.length >
                                             0 && (
                                             <div className="mt-4 flex flex-wrap gap-1.5">
                                                 {project.technologies.map(
@@ -1379,6 +1827,10 @@ function ProjectsManager({
         </div>
     );
 }
+
+/* =========================================================
+   MAIN ANALYTICS
+========================================================= */
 
 export default function Analytics() {
     const [token, setToken] =
@@ -1455,9 +1907,7 @@ export default function Analytics() {
 
                 try {
                     if (showRefresh) {
-                        setRefreshing(
-                            true
-                        );
+                        setRefreshing(true);
                     } else {
                         setLoadingAnalytics(
                             true
@@ -1503,6 +1953,7 @@ export default function Analytics() {
                     setLoadingAnalytics(
                         false
                     );
+
                     setRefreshing(false);
                 }
             },
@@ -1532,6 +1983,7 @@ export default function Analytics() {
             setLoginError(
                 "Password is required."
             );
+
             return;
         }
 
@@ -1624,9 +2076,7 @@ export default function Analytics() {
                     <div className="mb-8 text-center">
                         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
                             <Shield
-                                size={
-                                    24
-                                }
+                                size={24}
                                 className="text-white/70"
                             />
                         </div>
@@ -1725,9 +2175,7 @@ export default function Analytics() {
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
                             <Activity
-                                size={
-                                    18
-                                }
+                                size={18}
                                 className="text-white/70"
                             />
                         </div>
@@ -1758,9 +2206,7 @@ export default function Analytics() {
                             className="rounded-xl border border-white/10 p-2.5 text-white/50 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
                         >
                             <RefreshCw
-                                size={
-                                    17
-                                }
+                                size={17}
                                 className={
                                     refreshing
                                         ? "animate-spin"
@@ -1777,9 +2223,7 @@ export default function Analytics() {
                             className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-white/50 transition hover:bg-white/5 hover:text-white"
                         >
                             <LogOut
-                                size={
-                                    16
-                                }
+                                size={16}
                             />
 
                             <span className="hidden sm:inline">
@@ -1824,9 +2268,7 @@ export default function Analytics() {
                         }`}
                     >
                         <BarChart3
-                            size={
-                                16
-                            }
+                            size={16}
                         />
                         Analytics
                     </button>
@@ -1846,9 +2288,7 @@ export default function Analytics() {
                         }`}
                     >
                         <FolderKanban
-                            size={
-                                16
-                            }
+                            size={16}
                         />
                         Projects
                     </button>
@@ -1859,9 +2299,7 @@ export default function Analytics() {
                         className="inline-flex shrink-0 cursor-not-allowed items-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm text-white/20"
                     >
                         <Award
-                            size={
-                                16
-                            }
+                            size={16}
                         />
                         Certificates
 
@@ -1881,9 +2319,7 @@ export default function Analytics() {
                                     analytics.uniqueVisitors ||
                                     0
                                 }
-                                icon={
-                                    Users
-                                }
+                                icon={Users}
                                 description="Distinct visitors recorded"
                             />
 
@@ -1905,9 +2341,7 @@ export default function Analytics() {
                                     analytics.totalMessages ||
                                     0
                                 }
-                                icon={
-                                    Mail
-                                }
+                                icon={Mail}
                                 description="Contact submissions"
                             />
 
@@ -1929,9 +2363,7 @@ export default function Analytics() {
                                     analytics.totalCertificates ||
                                     0
                                 }
-                                icon={
-                                    Award
-                                }
+                                icon={Award}
                                 description="Certificates stored"
                             />
                         </div>
@@ -1972,9 +2404,7 @@ export default function Analytics() {
 
                         <div>
                             <SectionHeader
-                                icon={
-                                    Users
-                                }
+                                icon={Users}
                                 title="Recent Visitors"
                                 description="Latest recorded visits to your portfolio"
                             />
@@ -1988,9 +2418,7 @@ export default function Analytics() {
 
                         <div>
                             <SectionHeader
-                                icon={
-                                    Mail
-                                }
+                                icon={Mail}
                                 title="Recent Messages"
                                 description="Latest messages received through your contact form"
                             />
