@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import aboutMe from "../assets/images/aboutme.jpeg";
+import aboutMe from "../assets/images/akoto.jpeg";
 
 function Home() {
     const [isVisible, setIsVisible] = useState(false);
@@ -205,7 +205,7 @@ function Home() {
                                     font-semibold
                                     transition-colors
                                     duration-300
-                                    hover:text-red-400
+                                    hover:text-red-500
                                 "
                             >
                                 <span>View Projects</span>

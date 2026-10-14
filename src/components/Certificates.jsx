@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 
 import certificate1 from "../assets/images/certificate1.jpeg";
 import certificate2 from "../assets/images/certificate2.jpeg";
+import certificate3 from "../assets/images/cert1.jpeg";
+
 
 function Certificates() {
     const [isVisible, setIsVisible] = useState(false);
@@ -21,6 +23,13 @@ function Certificates() {
                 "A certificate received for being part of a team that achieved Top 2 for exceptional website design in ITE 399 - Human Computer Interaction I.",
             year: "2025",
             image: certificate2,
+        },
+        {
+            title: "Certificate of Completion",
+            description:
+                "A certificate received for successfully completing the online course: Introduction to the Computer Networking",
+            year: "2025",
+            image: certificate3,
         },
     ];
 
