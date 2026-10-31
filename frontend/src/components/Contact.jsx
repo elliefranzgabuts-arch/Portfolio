@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { API_URL } from "../apiConfig";
 
 function Contact(props) {
     const [isVisible, setIsVisible] = useState(false);
@@ -46,7 +47,7 @@ function Contact(props) {
 
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/contact`,
+                `${API_URL}/api/contact`,
                 {
                     method: "POST",
                     headers: {

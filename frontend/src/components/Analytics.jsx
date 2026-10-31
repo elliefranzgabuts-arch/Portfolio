@@ -572,7 +572,6 @@ function TrafficChart({ visitors }) {
     const circumference =
         2 * Math.PI * 72;
 
-    let accumulated = 0;
 
     return (
         <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
@@ -658,12 +657,20 @@ function TrafficChart({ visitors }) {
                                     percentage *
                                     circumference;
 
-                                const dashOffset =
-                                    -accumulated *
-                                    circumference;
+                                const previousPercentage =
+                                    traffic
+                                        .slice(0, index)
+                                        .reduce(
+                                            (sum, [, previousCount]) =>
+                                                sum +
+                                                Number(previousCount || 0) /
+                                                    totalPageViews,
+                                            0
+                                        );
 
-                                accumulated +=
-                                    percentage;
+                                const dashOffset =
+                                    -previousPercentage *
+                                    circumference;
 
                                 const segmentClass =
                                     index === 0
@@ -1165,6 +1172,8 @@ function ProjectsManager({
 
     const loadProjects =
         useCallback(async () => {
+            await Promise.resolve();
+
             try {
                 setLoading(true);
                 setError("");
@@ -1204,7 +1213,11 @@ function ProjectsManager({
         }, [token]);
 
     useEffect(() => {
-        loadProjects();
+        const timer = window.setTimeout(() => {
+            loadProjects();
+        }, 0);
+
+        return () => window.clearTimeout(timer);
     }, [loadProjects]);
 
     const resetForm = () => {
@@ -1857,9 +1870,6 @@ export default function Analytics() {
     const [analytics, setAnalytics] =
         useState(DEMO_ANALYTICS);
 
-    const [loadingAnalytics, setLoadingAnalytics] =
-        useState(false);
-
     const [refreshing, setRefreshing] =
         useState(false);
 
@@ -1868,6 +1878,8 @@ export default function Analytics() {
 
     const verifySession =
         useCallback(async () => {
+            await Promise.resolve();
+
             if (!token) {
                 setAuthenticated(false);
                 setCheckingAuth(false);
@@ -1894,7 +1906,11 @@ export default function Analytics() {
         }, [token]);
 
     useEffect(() => {
-        verifySession();
+        const timer = window.setTimeout(() => {
+            verifySession();
+        }, 0);
+
+        return () => window.clearTimeout(timer);
     }, [verifySession]);
 
     const loadAnalytics =
@@ -1907,10 +1923,6 @@ export default function Analytics() {
                 try {
                     if (showRefresh) {
                         setRefreshing(true);
-                    } else {
-                        setLoadingAnalytics(
-                            true
-                        );
                     }
 
                     const data =
@@ -1949,10 +1961,6 @@ export default function Analytics() {
                         );
                     }
                 } finally {
-                    setLoadingAnalytics(
-                        false
-                    );
-
                     setRefreshing(false);
                 }
             },
@@ -1960,13 +1968,15 @@ export default function Analytics() {
         );
 
     useEffect(() => {
-        if (
-            authenticated &&
-            activeTab ===
-                "analytics"
-        ) {
-            loadAnalytics();
+        if (!authenticated || activeTab !== "analytics") {
+            return;
         }
+
+        const timer = window.setTimeout(() => {
+            loadAnalytics();
+        }, 0);
+
+        return () => window.clearTimeout(timer);
     }, [
         authenticated,
         activeTab,
