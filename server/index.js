@@ -1,3 +1,4 @@
+
 import express from "express";
 import cors from "cors";
 import pg from "pg";
@@ -33,6 +34,7 @@ app.use(cors({
         if (!origin || allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
+
         console.warn(`Blocked CORS origin: ${origin}`);
         return callback(null, false);
     },
@@ -40,6 +42,7 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
 }));
+
 app.use(express.json());
 
 /* =========================
@@ -54,38 +57,74 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false },
     max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: 20000,
 });
 
 pool.on("error", (error) => {
-    console.error("Unexpected PostgreSQL pool error:", error.message);
+    console.error(
+        "Unexpected PostgreSQL pool error:",
+        error.message
+    );
 });
+
+function getPoolState() {
+    return {
+        totalConnections: pool.totalCount,
+        idleConnections: pool.idleCount,
+        waitingRequests: pool.waitingCount,
+    };
+}
+
+/* =========================
+   ADMIN ACTIVITY HELPER
+========================= */
+async function logAdminActivity(activity) {
+    try {
+        await pool.query(
+            "INSERT INTO admin_activity (activity) VALUES ($1)",
+            [activity]
+        );
+    } catch (error) {
+        console.error(
+            "Admin activity logging failed:",
+            error.message
+        );
+    }
+}
 
 /* =========================
    SUPABASE STORAGE
 ========================= */
 let supabaseClient;
-const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "project-images";
+
+const STORAGE_BUCKET =
+    process.env.SUPABASE_STORAGE_BUCKET || "project-images";
 
 function getSupabase() {
     if (supabaseClient) return supabaseClient;
 
     const supabaseUrl = process.env.SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const serviceRoleKey =
+        process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !serviceRoleKey) {
         throw new Error(
-            "Project image storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+            "Project image storage is not configured."
         );
     }
 
-    supabaseClient = createClient(supabaseUrl, serviceRoleKey, {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-            detectSessionInUrl: false,
-        },
-    });
+    supabaseClient = createClient(
+        supabaseUrl,
+        serviceRoleKey,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+                detectSessionInUrl: false,
+            },
+        }
+    );
+
     return supabaseClient;
 }
 
@@ -94,7 +133,9 @@ function getSupabase() {
 ========================= */
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 20 * 1024 * 1024 },
+    limits: {
+        fileSize: 20 * 1024 * 1024,
+    },
     fileFilter(req, file, callback) {
         const allowedTypes = [
             "image/jpeg",
@@ -102,22 +143,31 @@ const upload = multer({
             "image/webp",
             "image/jpg",
         ];
+
         if (allowedTypes.includes(file.mimetype)) {
             return callback(null, true);
         }
-        return callback(new Error(
-            "Only JPG, JPEG, PNG, and WEBP images are allowed."
-        ));
+
+        return callback(
+            new Error(
+                "Only JPG, JPEG, PNG, and WEBP images are allowed."
+            )
+        );
     },
 });
 
 function makeImagePath(file) {
-    const extension = path.extname(file.originalname).toLowerCase();
-    const baseName = path.basename(file.originalname, extension)
+    const extension = path.extname(
+        file.originalname
+    ).toLowerCase();
+
+    const baseName = path
+        .basename(file.originalname, extension)
         .replace(/[^a-zA-Z0-9-_]/g, "-")
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")
         .toLowerCase() || "project-image";
+
     return `projects/${Date.now()}-${baseName}${extension}`;
 }
 
@@ -126,6 +176,7 @@ async function uploadProjectImage(file) {
 
     const client = getSupabase();
     const objectPath = makeImagePath(file);
+
     const { error } = await client.storage
         .from(STORAGE_BUCKET)
         .upload(objectPath, file.buffer, {
@@ -134,18 +185,30 @@ async function uploadProjectImage(file) {
             cacheControl: "3600",
         });
 
-    if (error) throw new Error(`Image upload failed: ${error.message}`);
+    if (error) {
+        throw new Error(
+            `Image upload failed: ${error.message}`
+        );
+    }
 
     const { data } = client.storage
         .from(STORAGE_BUCKET)
         .getPublicUrl(objectPath);
 
     if (!data?.publicUrl) {
-        await client.storage.from(STORAGE_BUCKET).remove([objectPath]);
-        throw new Error("Unable to generate the public project image URL.");
+        await client.storage
+            .from(STORAGE_BUCKET)
+            .remove([objectPath]);
+
+        throw new Error(
+            "Unable to generate the public project image URL."
+        );
     }
 
-    return { url: data.publicUrl, path: objectPath };
+    return {
+        url: data.publicUrl,
+        path: objectPath,
+    };
 }
 
 function getStorageObjectPath(imageUrl) {
@@ -153,11 +216,21 @@ function getStorageObjectPath(imageUrl) {
 
     try {
         const parsed = new URL(imageUrl);
-        const marker = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+
+        const marker =
+            `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+
         const index = parsed.pathname.indexOf(marker);
+
         if (index === -1) return null;
-        const objectPath = parsed.pathname.slice(index + marker.length);
-        return objectPath ? decodeURIComponent(objectPath) : null;
+
+        const objectPath = parsed.pathname.slice(
+            index + marker.length
+        );
+
+        return objectPath
+            ? decodeURIComponent(objectPath)
+            : null;
     } catch {
         return null;
     }
@@ -165,26 +238,49 @@ function getStorageObjectPath(imageUrl) {
 
 async function deleteProjectImage(imageUrl) {
     const objectPath = getStorageObjectPath(imageUrl);
+
     if (!objectPath) return;
 
-    const { error } = await getSupabase().storage
-        .from(STORAGE_BUCKET)
-        .remove([objectPath]);
+    try {
+        const { error } = await getSupabase()
+            .storage
+            .from(STORAGE_BUCKET)
+            .remove([objectPath]);
 
-    if (error) {
-        console.error("Supabase Storage image cleanup failed:", error.message);
+        if (error) {
+            console.error(
+                "Supabase Storage image cleanup failed:",
+                error.message
+            );
+        }
+    } catch (error) {
+        console.error(
+            "Supabase Storage image cleanup failed:",
+            error.message
+        );
     }
 }
 
 async function removeUploadedImage(imagePath) {
     if (!imagePath) return;
+
     try {
-        const { error } = await getSupabase().storage
+        const { error } = await getSupabase()
+            .storage
             .from(STORAGE_BUCKET)
             .remove([imagePath]);
-        if (error) console.error("Temporary image cleanup failed:", error.message);
+
+        if (error) {
+            console.error(
+                "Temporary image cleanup failed:",
+                error.message
+            );
+        }
     } catch (error) {
-        console.error("Temporary image cleanup failed:", error.message);
+        console.error(
+            "Temporary image cleanup failed:",
+            error.message
+        );
     }
 }
 
@@ -214,6 +310,7 @@ function authenticateAdmin(req, res, next) {
 
     if (!JWT_SECRET) {
         console.error("JWT_SECRET is not configured.");
+
         return res.status(500).json({
             success: false,
             message: "Authentication is not configured.",
@@ -235,7 +332,10 @@ function authenticateAdmin(req, res, next) {
    ROOT
 ========================= */
 app.get("/", (req, res) => {
-    res.json({ success: true, message: "Backend is running!" });
+    res.json({
+        success: true,
+        message: "Backend is running!",
+    });
 });
 
 /* =========================
@@ -244,12 +344,18 @@ app.get("/", (req, res) => {
 app.get("/api/health", async (req, res) => {
     try {
         await pool.query("SELECT 1");
+
         res.json({
             success: true,
             message: "Backend and database are connected.",
         });
     } catch (error) {
-        console.error("Health check error:", error);
+        console.error(
+            "Health check error:",
+            error.message,
+            getPoolState()
+        );
+
         res.status(500).json({
             success: false,
             message: "Backend is running but database connection failed.",
@@ -263,6 +369,7 @@ app.get("/api/health", async (req, res) => {
 app.post("/api/login", async (req, res) => {
     try {
         const { password } = req.body;
+
         if (!password) {
             return res.status(400).json({
                 success: false,
@@ -270,8 +377,9 @@ app.post("/api/login", async (req, res) => {
             });
         }
 
-        const adminPassword = process.env.ADMIN_PASSWORD_HASH
-            || process.env.ADMIN_PASSWORD;
+        const adminPassword =
+            process.env.ADMIN_PASSWORD_HASH ||
+            process.env.ADMIN_PASSWORD;
 
         if (!adminPassword) {
             return res.status(500).json({
@@ -279,6 +387,7 @@ app.post("/api/login", async (req, res) => {
                 message: "Admin password is not configured.",
             });
         }
+
         if (!JWT_SECRET) {
             return res.status(500).json({
                 success: false,
@@ -287,8 +396,12 @@ app.post("/api/login", async (req, res) => {
         }
 
         let passwordMatches = false;
+
         if (/^\$2[aby]\$/.test(adminPassword)) {
-            passwordMatches = await bcrypt.compare(password, adminPassword);
+            passwordMatches = await bcrypt.compare(
+                password,
+                adminPassword
+            );
         } else {
             passwordMatches = password === adminPassword;
         }
@@ -300,28 +413,41 @@ app.post("/api/login", async (req, res) => {
             });
         }
 
-        const token = jwt.sign({ role: "admin" }, JWT_SECRET, {
-            expiresIn: "2h",
-        });
-
-        await pool.query(
-            "INSERT INTO admin_activity (activity) VALUES ($1)",
-            ["Admin logged in"]
+        const token = jwt.sign(
+            { role: "admin" },
+            JWT_SECRET,
+            { expiresIn: "2h" }
         );
 
-        res.json({ success: true, token });
+        await logAdminActivity("Admin logged in");
+
+        res.json({
+            success: true,
+            token,
+        });
     } catch (error) {
-        console.error("Login error:", error);
-        res.status(500).json({ success: false, message: "Login failed." });
+        console.error("Login error:", error.message);
+
+        res.status(500).json({
+            success: false,
+            message: "Login failed.",
+        });
     }
 });
 
 /* =========================
    ADMIN CHECK
 ========================= */
-app.get("/api/admin/check", authenticateAdmin, (req, res) => {
-    res.json({ success: true, authenticated: true });
-});
+app.get(
+    "/api/admin/check",
+    authenticateAdmin,
+    (req, res) => {
+        res.json({
+            success: true,
+            authenticated: true,
+        });
+    }
+);
 
 /* =========================
    VISITORS
@@ -329,6 +455,7 @@ app.get("/api/admin/check", authenticateAdmin, (req, res) => {
 app.post("/api/visitors", async (req, res) => {
     try {
         const { visitorId, path: visitorPath } = req.body;
+
         if (!visitorId) {
             return res.status(400).json({
                 success: false,
@@ -337,6 +464,7 @@ app.post("/api/visitors", async (req, res) => {
         }
 
         const safePath = visitorPath || "/";
+
         await pool.query(
             "INSERT INTO visitors (visitor_id, path) VALUES ($1, $2)",
             [visitorId, safePath]
@@ -352,22 +480,36 @@ app.post("/api/visitors", async (req, res) => {
 
         if (uniqueResult.rowCount > 0) {
             await pool.query(
-                "UPDATE site_stats SET visitor_count = visitor_count + 1 WHERE id = 1"
+                `UPDATE site_stats
+                 SET visitor_count = visitor_count + 1
+                 WHERE id = 1`
             );
         }
 
-        const [statsResult, visitsResult] = await Promise.all([
-            pool.query("SELECT visitor_count FROM site_stats WHERE id = 1"),
-            pool.query("SELECT COUNT(*) AS total FROM visitors"),
-        ]);
+        const statsResult = await pool.query(
+            "SELECT visitor_count FROM site_stats WHERE id = 1"
+        );
+
+        const visitsResult = await pool.query(
+            "SELECT COUNT(*) AS total FROM visitors"
+        );
 
         res.json({
             success: true,
-            visitorCount: Number(statsResult.rows[0]?.visitor_count || 0),
-            totalVisits: Number(visitsResult.rows[0]?.total || 0),
+            visitorCount: Number(
+                statsResult.rows[0]?.visitor_count || 0
+            ),
+            totalVisits: Number(
+                visitsResult.rows[0]?.total || 0
+            ),
         });
     } catch (error) {
-        console.error("Visitor tracking error:", error);
+        console.error(
+            "Visitor tracking error:",
+            error.message,
+            getPoolState()
+        );
+
         res.status(500).json({
             success: false,
             message: "Unable to record visitor.",
@@ -378,46 +520,87 @@ app.post("/api/visitors", async (req, res) => {
 /* =========================
    ANALYTICS
 ========================= */
-app.get("/api/analytics", authenticateAdmin, async (req, res) => {
-    try {
-        const [
-            visitorStats,
-            visitStats,
-            messageStats,
-            projectStats,
-            certificateStats,
-            recentVisitors,
-            recentMessages,
-        ] = await Promise.all([
-            pool.query("SELECT visitor_count FROM site_stats WHERE id = 1"),
-            pool.query("SELECT COUNT(*) AS total FROM visitors"),
-            pool.query("SELECT COUNT(*) AS total FROM contact_messages"),
-            pool.query("SELECT COUNT(*) AS total FROM projects"),
-            pool.query("SELECT COUNT(*) AS total FROM certificates"),
-            pool.query("SELECT id, visitor_id, path, visited_at FROM visitors ORDER BY visited_at DESC LIMIT 20"),
-            pool.query("SELECT id, name, email, message, created_at FROM contact_messages ORDER BY created_at DESC LIMIT 10"),
-        ]);
+app.get(
+    "/api/analytics",
+    authenticateAdmin,
+    async (req, res) => {
+        try {
+            // Sequential queries reduce simultaneous
+            // database connection demand.
+            const visitorStats = await pool.query(
+                "SELECT visitor_count FROM site_stats WHERE id = 1"
+            );
 
-        res.json({
-            success: true,
-            analytics: {
-                uniqueVisitors: Number(visitorStats.rows[0]?.visitor_count || 0),
-                totalVisits: Number(visitStats.rows[0]?.total || 0),
-                totalMessages: Number(messageStats.rows[0]?.total || 0),
-                totalProjects: Number(projectStats.rows[0]?.total || 0),
-                totalCertificates: Number(certificateStats.rows[0]?.total || 0),
-                recentVisitors: recentVisitors.rows,
-                recentMessages: recentMessages.rows,
-            },
-        });
-    } catch (error) {
-        console.error("Analytics error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Unable to fetch analytics.",
-        });
+            const visitStats = await pool.query(
+                "SELECT COUNT(*) AS total FROM visitors"
+            );
+
+            const messageStats = await pool.query(
+                "SELECT COUNT(*) AS total FROM contact_messages"
+            );
+
+            const projectStats = await pool.query(
+                "SELECT COUNT(*) AS total FROM projects"
+            );
+
+            const certificateStats = await pool.query(
+                "SELECT COUNT(*) AS total FROM certificates"
+            );
+
+            const recentVisitors = await pool.query(
+                `SELECT id, visitor_id, path, visited_at
+                 FROM visitors
+                 ORDER BY visited_at DESC
+                 LIMIT 20`
+            );
+
+            const recentMessages = await pool.query(
+                `SELECT id, name, email, message, created_at
+                 FROM contact_messages
+                 ORDER BY created_at DESC
+                 LIMIT 10`
+            );
+
+            res.json({
+                success: true,
+                analytics: {
+                    uniqueVisitors: Number(
+                        visitorStats.rows[0]?.visitor_count || 0
+                    ),
+                    totalVisits: Number(
+                        visitStats.rows[0]?.total || 0
+                    ),
+                    totalMessages: Number(
+                        messageStats.rows[0]?.total || 0
+                    ),
+                    totalProjects: Number(
+                        projectStats.rows[0]?.total || 0
+                    ),
+                    totalCertificates: Number(
+                        certificateStats.rows[0]?.total || 0
+                    ),
+                    recentVisitors: recentVisitors.rows,
+                    recentMessages: recentMessages.rows,
+                },
+            });
+        } catch (error) {
+            console.error(
+                "Analytics error:",
+                error.message
+            );
+
+            console.error(
+                "PostgreSQL Pool State:",
+                getPoolState()
+            );
+
+            res.status(500).json({
+                success: false,
+                message: "Unable to fetch analytics.",
+            });
+        }
     }
-});
+);
 
 /* =========================
    CONTACT
@@ -425,7 +608,12 @@ app.get("/api/analytics", authenticateAdmin, async (req, res) => {
 app.post("/api/contact", async (req, res) => {
     try {
         const { name, email, message } = req.body;
-        if (!name?.trim() || !email?.trim() || !message?.trim()) {
+
+        if (
+            !name?.trim() ||
+            !email?.trim() ||
+            !message?.trim()
+        ) {
             return res.status(400).json({
                 success: false,
                 message: "Name, email, and message are required.",
@@ -433,12 +621,22 @@ app.post("/api/contact", async (req, res) => {
         }
 
         await pool.query(
-            "INSERT INTO contact_messages (name, email, message) VALUES ($1, $2, $3)",
-            [name.trim(), email.trim(), message.trim()]
+            `INSERT INTO contact_messages (name, email, message)
+             VALUES ($1, $2, $3)`,
+            [
+                name.trim(),
+                email.trim(),
+                message.trim(),
+            ]
         );
-        res.json({ success: true, message: "Message sent successfully." });
+
+        res.json({
+            success: true,
+            message: "Message sent successfully.",
+        });
     } catch (error) {
-        console.error("Contact error:", error);
+        console.error("Contact error:", error.message);
+
         res.status(500).json({
             success: false,
             message: "Unable to send message.",
@@ -446,48 +644,77 @@ app.post("/api/contact", async (req, res) => {
     }
 });
 
-app.get("/api/contact", authenticateAdmin, async (req, res) => {
-    try {
-        const result = await pool.query(
-            "SELECT id, name, email, message, created_at FROM contact_messages ORDER BY created_at DESC"
-        );
-        res.json({ success: true, messages: result.rows });
-    } catch (error) {
-        console.error("Contact fetch error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Unable to fetch messages.",
-        });
-    }
-});
+app.get(
+    "/api/contact",
+    authenticateAdmin,
+    async (req, res) => {
+        try {
+            const result = await pool.query(
+                `SELECT id, name, email, message, created_at
+                 FROM contact_messages
+                 ORDER BY created_at DESC`
+            );
 
-app.delete("/api/contact/:id", authenticateAdmin, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await pool.query(
-            "DELETE FROM contact_messages WHERE id = $1 RETURNING id",
-            [id]
-        );
-        if (result.rowCount === 0) {
-            return res.status(404).json({
+            res.json({
+                success: true,
+                messages: result.rows,
+            });
+        } catch (error) {
+            console.error(
+                "Contact fetch error:",
+                error.message
+            );
+
+            res.status(500).json({
                 success: false,
-                message: "Message not found.",
+                message: "Unable to fetch messages.",
             });
         }
-
-        await pool.query(
-            "INSERT INTO admin_activity (activity) VALUES ($1)",
-            [`Deleted contact message #${id}`]
-        );
-        res.json({ success: true, message: "Message deleted successfully." });
-    } catch (error) {
-        console.error("Contact delete error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Unable to delete message.",
-        });
     }
-});
+);
+
+app.delete(
+    "/api/contact/:id",
+    authenticateAdmin,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const result = await pool.query(
+                `DELETE FROM contact_messages
+                 WHERE id = $1
+                 RETURNING id`,
+                [id]
+            );
+
+            if (result.rowCount === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Message not found.",
+                });
+            }
+
+            await logAdminActivity(
+                `Deleted contact message #${id}`
+            );
+
+            res.json({
+                success: true,
+                message: "Message deleted successfully.",
+            });
+        } catch (error) {
+            console.error(
+                "Contact delete error:",
+                error.message
+            );
+
+            res.status(500).json({
+                success: false,
+                message: "Unable to delete message.",
+            });
+        }
+    }
+);
 
 /* =========================
    PROJECTS - PUBLIC
@@ -495,11 +722,21 @@ app.delete("/api/contact/:id", authenticateAdmin, async (req, res) => {
 app.get("/api/projects", async (req, res) => {
     try {
         const result = await pool.query(
-            "SELECT id, title, description, link, image_url, created_at FROM projects ORDER BY created_at DESC"
+            `SELECT id, title, description, link, image_url, created_at
+             FROM projects
+             ORDER BY created_at DESC`
         );
-        res.json({ success: true, projects: result.rows });
+
+        res.json({
+            success: true,
+            projects: result.rows,
+        });
     } catch (error) {
-        console.error("Projects fetch error:", error);
+        console.error(
+            "Projects fetch error:",
+            error.message
+        );
+
         res.status(500).json({
             success: false,
             message: "Unable to fetch projects.",
@@ -516,6 +753,7 @@ app.post(
     upload.single("image"),
     async (req, res) => {
         let uploadedImage = null;
+        let projectCreated = false;
 
         try {
             const { title, description, link } = req.body;
@@ -543,11 +781,12 @@ app.post(
                 ]
             );
 
+            projectCreated = true;
+
             const projectId = result.rows[0].id;
 
-            await pool.query(
-                "INSERT INTO admin_activity (activity) VALUES ($1)",
-                [`Created project #${projectId}: ${title.trim()}`]
+            await logAdminActivity(
+                `Created project #${projectId}: ${title.trim()}`
             );
 
             res.status(201).json({
@@ -557,11 +796,15 @@ app.post(
                 imageUrl: uploadedImage?.url || null,
             });
         } catch (error) {
-            if (uploadedImage?.path) {
+            if (!projectCreated && uploadedImage?.path) {
                 await removeUploadedImage(uploadedImage.path);
             }
 
-            console.error("Project create error:", error);
+            console.error(
+                "Project create error:",
+                error.message
+            );
+
             res.status(500).json({
                 success: false,
                 message: error.message || "Unable to create project.",
@@ -579,6 +822,7 @@ app.put(
     upload.single("image"),
     async (req, res) => {
         let uploadedImage = null;
+        let projectUpdated = false;
 
         try {
             const { id } = req.params;
@@ -592,7 +836,10 @@ app.put(
             }
 
             const existingResult = await pool.query(
-                "SELECT image_url FROM projects WHERE id = $1 LIMIT 1",
+                `SELECT image_url
+                 FROM projects
+                 WHERE id = $1
+                 LIMIT 1`,
                 [id]
             );
 
@@ -603,7 +850,9 @@ app.put(
                 });
             }
 
-            const oldImageUrl = existingResult.rows[0].image_url;
+            const oldImageUrl =
+                existingResult.rows[0].image_url;
+
             let imageUrl = oldImageUrl;
 
             if (req.file) {
@@ -613,7 +862,10 @@ app.put(
 
             await pool.query(
                 `UPDATE projects
-                 SET title = $1, description = $2, link = $3, image_url = $4
+                 SET title = $1,
+                     description = $2,
+                     link = $3,
+                     image_url = $4
                  WHERE id = $5`,
                 [
                     title.trim(),
@@ -624,13 +876,14 @@ app.put(
                 ]
             );
 
+            projectUpdated = true;
+
             if (uploadedImage && oldImageUrl) {
                 await deleteProjectImage(oldImageUrl);
             }
 
-            await pool.query(
-                "INSERT INTO admin_activity (activity) VALUES ($1)",
-                [`Updated project #${id}: ${title.trim()}`]
+            await logAdminActivity(
+                `Updated project #${id}: ${title.trim()}`
             );
 
             res.json({
@@ -639,11 +892,15 @@ app.put(
                 imageUrl,
             });
         } catch (error) {
-            if (uploadedImage?.path) {
+            if (!projectUpdated && uploadedImage?.path) {
                 await removeUploadedImage(uploadedImage.path);
             }
 
-            console.error("Project update error:", error);
+            console.error(
+                "Project update error:",
+                error.message
+            );
+
             res.status(500).json({
                 success: false,
                 message: error.message || "Unable to update project.",
@@ -655,229 +912,295 @@ app.put(
 /* =========================
    PROJECTS - DELETE
 ========================= */
-app.delete("/api/projects/:id", authenticateAdmin, async (req, res) => {
-    try {
-        const { id } = req.params;
+app.delete(
+    "/api/projects/:id",
+    authenticateAdmin,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
 
-        const existingResult = await pool.query(
-            "SELECT title, image_url FROM projects WHERE id = $1 LIMIT 1",
-            [id]
-        );
+            const existingResult = await pool.query(
+                `SELECT title, image_url
+                 FROM projects
+                 WHERE id = $1
+                 LIMIT 1`,
+                [id]
+            );
 
-        if (existingResult.rowCount === 0) {
-            return res.status(404).json({
+            if (existingResult.rowCount === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Project not found.",
+                });
+            }
+
+            const project = existingResult.rows[0];
+
+            await pool.query(
+                "DELETE FROM projects WHERE id = $1",
+                [id]
+            );
+
+            if (project.image_url) {
+                await deleteProjectImage(project.image_url);
+            }
+
+            await logAdminActivity(
+                `Deleted project #${id}: ${project.title}`
+            );
+
+            res.json({
+                success: true,
+                message: "Project deleted successfully.",
+            });
+        } catch (error) {
+            console.error(
+                "Project delete error:",
+                error.message
+            );
+
+            res.status(500).json({
                 success: false,
-                message: "Project not found.",
+                message: "Unable to delete project.",
             });
         }
-
-        const project = existingResult.rows[0];
-
-        await pool.query(
-            "DELETE FROM projects WHERE id = $1",
-            [id]
-        );
-
-        if (project.image_url) {
-            await deleteProjectImage(project.image_url);
-        }
-
-        await pool.query(
-            "INSERT INTO admin_activity (activity) VALUES ($1)",
-            [`Deleted project #${id}: ${project.title}`]
-        );
-
-        res.json({
-            success: true,
-            message: "Project deleted successfully.",
-        });
-    } catch (error) {
-        console.error("Project delete error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Unable to delete project.",
-        });
     }
-});
+);
 
 /* =========================
    CERTIFICATES - READ
 ========================= */
-app.get("/api/certificates", authenticateAdmin, async (req, res) => {
-    try {
-        const result = await pool.query(
-            "SELECT id, title, issuer, date, link, created_at FROM certificates ORDER BY date DESC, created_at DESC"
-        );
-        res.json({ success: true, certificates: result.rows });
-    } catch (error) {
-        console.error("Certificates fetch error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Unable to fetch certificates.",
-        });
+app.get(
+    "/api/certificates",
+    authenticateAdmin,
+    async (req, res) => {
+        try {
+            const result = await pool.query(
+                `SELECT id, title, issuer, date, link, created_at
+                 FROM certificates
+                 ORDER BY date DESC, created_at DESC`
+            );
+
+            res.json({
+                success: true,
+                certificates: result.rows,
+            });
+        } catch (error) {
+            console.error(
+                "Certificates fetch error:",
+                error.message
+            );
+
+            res.status(500).json({
+                success: false,
+                message: "Unable to fetch certificates.",
+            });
+        }
     }
-});
+);
 
 /* =========================
    CERTIFICATES - CREATE
 ========================= */
-app.post("/api/certificates", authenticateAdmin, async (req, res) => {
-    try {
-        const { title, issuer, date, link } = req.body;
+app.post(
+    "/api/certificates",
+    authenticateAdmin,
+    async (req, res) => {
+        try {
+            const { title, issuer, date, link } = req.body;
 
-        if (!title?.trim() || !issuer?.trim()) {
-            return res.status(400).json({
+            if (!title?.trim() || !issuer?.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Title and issuer are required.",
+                });
+            }
+
+            const result = await pool.query(
+                `INSERT INTO certificates (title, issuer, date, link)
+                 VALUES ($1, $2, $3, $4)
+                 RETURNING id`,
+                [
+                    title.trim(),
+                    issuer.trim(),
+                    date || null,
+                    link?.trim() || null,
+                ]
+            );
+
+            const certificateId = result.rows[0].id;
+
+            await logAdminActivity(
+                `Created certificate #${certificateId}: ${title.trim()}`
+            );
+
+            res.status(201).json({
+                success: true,
+                message: "Certificate created successfully.",
+                certificateId,
+            });
+        } catch (error) {
+            console.error(
+                "Certificate create error:",
+                error.message
+            );
+
+            res.status(500).json({
                 success: false,
-                message: "Title and issuer are required.",
+                message: "Unable to create certificate.",
             });
         }
-
-        const result = await pool.query(
-            `INSERT INTO certificates (title, issuer, date, link)
-             VALUES ($1, $2, $3, $4)
-             RETURNING id`,
-            [
-                title.trim(),
-                issuer.trim(),
-                date || null,
-                link?.trim() || null,
-            ]
-        );
-
-        const certificateId = result.rows[0].id;
-
-        await pool.query(
-            "INSERT INTO admin_activity (activity) VALUES ($1)",
-            [`Created certificate #${certificateId}: ${title.trim()}`]
-        );
-
-        res.status(201).json({
-            success: true,
-            message: "Certificate created successfully.",
-            certificateId,
-        });
-    } catch (error) {
-        console.error("Certificate create error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Unable to create certificate.",
-        });
     }
-});
+);
 
 /* =========================
    CERTIFICATES - UPDATE
 ========================= */
-app.put("/api/certificates/:id", authenticateAdmin, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { title, issuer, date, link } = req.body;
+app.put(
+    "/api/certificates/:id",
+    authenticateAdmin,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { title, issuer, date, link } = req.body;
 
-        if (!title?.trim() || !issuer?.trim()) {
-            return res.status(400).json({
+            if (!title?.trim() || !issuer?.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Title and issuer are required.",
+                });
+            }
+
+            const result = await pool.query(
+                `UPDATE certificates
+                 SET title = $1,
+                     issuer = $2,
+                     date = $3,
+                     link = $4
+                 WHERE id = $5
+                 RETURNING id`,
+                [
+                    title.trim(),
+                    issuer.trim(),
+                    date || null,
+                    link?.trim() || null,
+                    id,
+                ]
+            );
+
+            if (result.rowCount === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Certificate not found.",
+                });
+            }
+
+            await logAdminActivity(
+                `Updated certificate #${id}: ${title.trim()}`
+            );
+
+            res.json({
+                success: true,
+                message: "Certificate updated successfully.",
+            });
+        } catch (error) {
+            console.error(
+                "Certificate update error:",
+                error.message
+            );
+
+            res.status(500).json({
                 success: false,
-                message: "Title and issuer are required.",
+                message: "Unable to update certificate.",
             });
         }
-
-        const result = await pool.query(
-            `UPDATE certificates
-             SET title = $1, issuer = $2, date = $3, link = $4
-             WHERE id = $5
-             RETURNING id`,
-            [
-                title.trim(),
-                issuer.trim(),
-                date || null,
-                link?.trim() || null,
-                id,
-            ]
-        );
-
-        if (result.rowCount === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Certificate not found.",
-            });
-        }
-
-        await pool.query(
-            "INSERT INTO admin_activity (activity) VALUES ($1)",
-            [`Updated certificate #${id}: ${title.trim()}`]
-        );
-
-        res.json({
-            success: true,
-            message: "Certificate updated successfully.",
-        });
-    } catch (error) {
-        console.error("Certificate update error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Unable to update certificate.",
-        });
     }
-});
+);
 
 /* =========================
    CERTIFICATES - DELETE
 ========================= */
-app.delete("/api/certificates/:id", authenticateAdmin, async (req, res) => {
-    try {
-        const { id } = req.params;
+app.delete(
+    "/api/certificates/:id",
+    authenticateAdmin,
+    async (req, res) => {
+        try {
+            const { id } = req.params;
 
-        const existingResult = await pool.query(
-            "SELECT title FROM certificates WHERE id = $1 LIMIT 1",
-            [id]
-        );
+            const existingResult = await pool.query(
+                `SELECT title
+                 FROM certificates
+                 WHERE id = $1
+                 LIMIT 1`,
+                [id]
+            );
 
-        if (existingResult.rowCount === 0) {
-            return res.status(404).json({
+            if (existingResult.rowCount === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Certificate not found.",
+                });
+            }
+
+            await pool.query(
+                "DELETE FROM certificates WHERE id = $1",
+                [id]
+            );
+
+            await logAdminActivity(
+                `Deleted certificate #${id}: ${existingResult.rows[0].title}`
+            );
+
+            res.json({
+                success: true,
+                message: "Certificate deleted successfully.",
+            });
+        } catch (error) {
+            console.error(
+                "Certificate delete error:",
+                error.message
+            );
+
+            res.status(500).json({
                 success: false,
-                message: "Certificate not found.",
+                message: "Unable to delete certificate.",
             });
         }
-
-        await pool.query(
-            "DELETE FROM certificates WHERE id = $1",
-            [id]
-        );
-
-        await pool.query(
-            "INSERT INTO admin_activity (activity) VALUES ($1)",
-            [`Deleted certificate #${id}: ${existingResult.rows[0].title}`]
-        );
-
-        res.json({
-            success: true,
-            message: "Certificate deleted successfully.",
-        });
-    } catch (error) {
-        console.error("Certificate delete error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Unable to delete certificate.",
-        });
     }
-});
+);
 
 /* =========================
    ADMIN ACTIVITY
 ========================= */
-app.get("/api/admin/activity", authenticateAdmin, async (req, res) => {
-    try {
-        const result = await pool.query(
-            "SELECT id, activity, created_at FROM admin_activity ORDER BY created_at DESC LIMIT 50"
-        );
-        res.json({ success: true, activity: result.rows });
-    } catch (error) {
-        console.error("Admin activity error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Unable to fetch admin activity.",
-        });
+app.get(
+    "/api/admin/activity",
+    authenticateAdmin,
+    async (req, res) => {
+        try {
+            const result = await pool.query(
+                `SELECT id, activity, created_at
+                 FROM admin_activity
+                 ORDER BY created_at DESC
+                 LIMIT 50`
+            );
+
+            res.json({
+                success: true,
+                activity: result.rows,
+            });
+        } catch (error) {
+            console.error(
+                "Admin activity error:",
+                error.message
+            );
+
+            res.status(500).json({
+                success: false,
+                message: "Unable to fetch admin activity.",
+            });
+        }
     }
-});
+);
 
 /* =========================
    ERROR HANDLER
@@ -890,6 +1213,7 @@ app.use((error, req, res, next) => {
                 message: "Image must be 20MB or smaller.",
             });
         }
+
         return res.status(400).json({
             success: false,
             message: error.message,
@@ -904,6 +1228,7 @@ app.use((error, req, res, next) => {
     }
 
     console.error("Unhandled server error:", error);
+
     res.status(500).json({
         success: false,
         message: "An unexpected server error occurred.",
@@ -915,19 +1240,44 @@ app.use((error, req, res, next) => {
 ========================= */
 const server = app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
+
     try {
         await pool.query("SELECT 1");
         console.log("Supabase PostgreSQL database connected.");
     } catch (error) {
-        console.error("PostgreSQL database connection failed:", error.message);
+        console.error(
+            "PostgreSQL database connection failed:",
+            error.message
+        );
+
+        console.error("Pool state:", getPoolState());
     }
 });
 
+/* =========================
+   GRACEFUL SHUTDOWN
+========================= */
+let isShuttingDown = false;
+
 async function shutdown(signal) {
+    if (isShuttingDown) return;
+
+    isShuttingDown = true;
+
     console.log(`${signal} received. Shutting down...`);
+
     server.close(async () => {
-        await pool.end();
-        process.exit(0);
+        try {
+            await pool.end();
+            console.log("PostgreSQL pool closed.");
+            process.exit(0);
+        } catch (error) {
+            console.error(
+                "Error closing PostgreSQL pool:",
+                error.message
+            );
+            process.exit(1);
+        }
     });
 }
 
