@@ -18,8 +18,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
-const API_URL =
-    "https://portfolio-production-881c.up.railway.app";
+import { API_URL } from "../apiConfig";
 
 const DEMO_ANALYTICS = {
     uniqueVisitors: 0,

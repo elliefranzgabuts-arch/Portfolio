@@ -4,10 +4,7 @@ import ourLittleWorld from "../assets/images/our-little-world.png";
 import jdServices from "../assets/images/jd&s.png";
 import campusConnect from "../assets/images/campus.png";
 
-const API_URL =
-    window.location.hostname === "localhost"
-        ? "http://localhost:5000"
-        : import.meta.env.VITE_API_URL || "";
+import { API_URL } from "../apiConfig";
 
 function ExternalLinkIcon() {
     return (

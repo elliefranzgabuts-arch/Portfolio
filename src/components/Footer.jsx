@@ -1,9 +1,8 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { API_URL } from "../apiConfig";
 
 function Footer() {
-    const API_URL =
-        "https://portfolio-production-881c.up.railway.app";
 
     useEffect(() => {
         const recordVisitor = async () => {

@@ -130,7 +130,7 @@ function Certificates() {
                 <div className="space-y-16">
                     {certificates.map((certificate, index) => (
                         <article
-                            key={certificate.title}
+                            key={`${certificate.title}-${index}`}
                             className={`
                                 group
                                 relative
