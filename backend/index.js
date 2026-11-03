@@ -171,6 +171,35 @@ function makeImagePath(file) {
     return `projects/${Date.now()}-${baseName}${extension}`;
 }
 
+function parseTechnologies(value) {
+    if (Array.isArray(value)) {
+        return value
+            .map((item) => String(item).trim())
+            .filter(Boolean);
+    }
+
+    if (typeof value !== "string" || !value.trim()) {
+        return [];
+    }
+
+    try {
+        const parsed = JSON.parse(value);
+
+        if (Array.isArray(parsed)) {
+            return parsed
+                .map((item) => String(item).trim())
+                .filter(Boolean);
+        }
+    } catch {
+        // Support comma-separated values too.
+    }
+
+    return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
 async function uploadProjectImage(file) {
     if (!file) return null;
 
@@ -722,7 +751,14 @@ app.delete(
 app.get("/api/projects", async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT id, title, description, link, image_url, created_at
+            `SELECT
+                id,
+                title,
+                description,
+                link,
+                image_url,
+                technologies,
+                created_at
              FROM projects
              ORDER BY created_at DESC`
         );
@@ -747,6 +783,7 @@ app.get("/api/projects", async (req, res) => {
 /* =========================
    PROJECTS - CREATE
 ========================= */
+
 app.post(
     "/api/projects",
     authenticateAdmin,
@@ -756,7 +793,15 @@ app.post(
         let projectCreated = false;
 
         try {
-            const { title, description, link } = req.body;
+            const {
+                title,
+                description,
+                link,
+            } = req.body;
+
+            const technologies = parseTechnologies(
+                req.body.technologies
+            );
 
             if (!title?.trim() || !description?.trim()) {
                 return res.status(400).json({
@@ -770,14 +815,21 @@ app.post(
             }
 
             const result = await pool.query(
-                `INSERT INTO projects (title, description, link, image_url)
-                 VALUES ($1, $2, $3, $4)
-                 RETURNING id`,
+                `INSERT INTO projects (
+                    title,
+                    description,
+                    link,
+                    image_url,
+                    technologies
+                )
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING id`,
                 [
                     title.trim(),
                     description.trim(),
                     link?.trim() || null,
                     uploadedImage?.url || null,
+                    technologies,
                 ]
             );
 
@@ -813,9 +865,12 @@ app.post(
     }
 );
 
+
 /* =========================
    PROJECTS - UPDATE
 ========================= */
+
+
 app.put(
     "/api/projects/:id",
     authenticateAdmin,
@@ -826,7 +881,16 @@ app.put(
 
         try {
             const { id } = req.params;
-            const { title, description, link } = req.body;
+
+            const {
+                title,
+                description,
+                link,
+            } = req.body;
+
+            const technologies = parseTechnologies(
+                req.body.technologies
+            );
 
             if (!title?.trim() || !description?.trim()) {
                 return res.status(400).json({
@@ -865,13 +929,15 @@ app.put(
                  SET title = $1,
                      description = $2,
                      link = $3,
-                     image_url = $4
-                 WHERE id = $5`,
+                     image_url = $4,
+                     technologies = $5
+                 WHERE id = $6`,
                 [
                     title.trim(),
                     description.trim(),
                     link?.trim() || null,
                     imageUrl,
+                    technologies,
                     id,
                 ]
             );
@@ -908,6 +974,7 @@ app.put(
         }
     }
 );
+
 
 /* =========================
    PROJECTS - DELETE
