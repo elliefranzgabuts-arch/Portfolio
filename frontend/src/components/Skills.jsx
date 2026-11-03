@@ -21,9 +21,12 @@ const skillGroups = [
         description:
             "Technologies I use to build server-side logic, APIs, and application functionality.",
         skills: [
+            "Python",
+            "Flask",
             "Node.js",
             "Express.js",
-            "REST API", 
+            "REST API",
+            "MapTiler API",
         ],
     },
     {
@@ -32,19 +35,41 @@ const skillGroups = [
             "Technologies and services I use to store, manage, and connect application data.",
         skills: [
             "MySQL",
+            "PostgreSQL",
+        ],
+    },
+    {
+        title: "Tools & Development Platforms",
+        description:
+            "Tools and platforms I use to for coding, version control, project management    and development.",
+        skills: [
+            "Git",
+            "GitHub",
+            "VS Code"
+        ],
+    },
+    {
+        title: "Deployment & Cloud Platforms",
+        description:
+            "Platforms I use to deploy and host web applications, ensuring they are accessible online.",
+        skills: [
+            "Render",
+            "CloudFlare",
+            "Railway",
+            "Supabase",
             "Aiven",
         ],
     },
     {
-        title: "Tools & Deployment",
+        title: "Ai Tools",
         description:
-            "Tools and platforms I use to manage development, version control, and deployment.",
+            "Ai-powered tool I use to assist with coding, debugging, problem-solving, and improving my development workflow.",
         skills: [
-            "Git",
-            "GitHub",
-            "VS Code",
-            "Render",
-            "Cloudflare",
+            "Claude Code",
+            "OpenAI Codex CLI",
+            "ChatGPT",
+            "Ollama"
+
         ],
     },
 ];
